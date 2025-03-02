@@ -10,7 +10,8 @@ IF="$(dirname $0)/.containerignore"
 GENERATE_FIGURES=0
 LAUNCH_JUPYTER=0
 LAUNCH_IPYTHON=0
-
+COLLECT_DATA=0
+EXPORT_IMAGE=0
 
 POSITIONAL_ARGS=()
 
@@ -20,15 +21,23 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -g|--generate-figures)
       GENERATE_FIGURES=1
-      shift # past argument
+      shift
       ;;
     -j|--jupyter)
       LAUNCH_JUPYTER=1
-      shift # past argument
+      shift
       ;;
     -i|--ipython)
       LAUNCH_IPYTHON=1
-      shift # past argument
+      shift
+      ;;
+    -c|--collect-data)
+      COLLECT_DATA=1
+      shift
+      ;;
+    -e|--export-image)
+      EXPORT_IMAGE=1
+      shift
       ;;
     -*|--*)
       echo "Unknown option $1"
@@ -60,4 +69,10 @@ if [[ $LAUNCH_IPYTHON -eq 1 ]]; then
     # need to pass:  %run watch_calibration/watch_calibration.py
 fi
 
-# #ENGINE image save watch-calibration > watch-calibration.tar
+if [[ $COLLECT_DATA -eq 1 ]]; then
+    $ENGINE run --rm -v $(pwd):/usr/src/exp -it watch-calibration wc-collect-data
+fi
+
+if [[ $EXPORT_IMAGE -eq 1 ]]; then
+    $ENGINE image save watch-calibration > watch-calibration.tar
+fi
