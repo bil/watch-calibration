@@ -1,6 +1,6 @@
 # allow experiment environment file, but not other .env files
-!experimental_config.env
 *.env
+!experimental_config.env
 
 # container images
 *.tar
