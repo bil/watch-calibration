@@ -7,6 +7,28 @@ from PIL import Image, ImageFont, ImageDraw
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+# TODO license table?
+
+dot = graphviz.Digraph()
+dot.attr('node', shape='none')
+table_html = open(f"{dir_path}/licenses.html", "r").read()
+dot.node('table', label=table_html)
+dot.render(f"{dir_path}/licenses", format='png', cleanup=True)
+# dot.render(f"{dir_path}/licenses.gv")
+
+# TODO storage option table?
+
+dot = graphviz.Digraph()
+dot.attr('node', shape='none')
+table_html = open(f"{dir_path}/storage_options.html", "r").read()
+dot.node('table', label=table_html)
+dot.render(f"{dir_path}/storage_options", format='png', cleanup=True)
+# dot.render(f"{dir_path}/storage_options.gv")
+
+# TODO broken experimental workflow
+
+# TODO better experimental workflow
+
 # upload workflow
 
 dot = graphviz.Digraph(comment="Experiment Archive Upload Workflow")
@@ -40,7 +62,12 @@ dot.render(f"{dir_path}/usage.gv")
 ascii_files = DisplayTree(
     ".",
     stringRep=True,
-    ignoreList=["watch_calibration"]
+    ignoreList=[
+        "watch_calibration",
+        "watch_calibration.egg-info",
+        "*.wav",
+        "build",
+    ]
 )
 
 print(ascii_files)
@@ -60,4 +87,4 @@ draw = ImageDraw.Draw(im)
 draw.multiline_text((10, 10), ascii_files, font=font, fill=(0,0,0))
 
 # Save Image
-im.save(f"{dir_path}file_structure.png", "PNG")
+im.save(f"{dir_path}/file_structure.png", "PNG")

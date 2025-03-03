@@ -1,3 +1,7 @@
+# ARTS open framework data directories
+raw_data/
+deriv_data/
+
 # allow experiment environment file, but not other .env files
 *.env
 !experimental_config.env
