@@ -7,27 +7,70 @@ from PIL import Image, ImageFont, ImageDraw
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-# TODO license table?
 
-dot = graphviz.Digraph()
-dot.attr('node', shape='none')
-table_html = open(f"{dir_path}/licenses.html", "r").read()
-dot.node('table', label=table_html)
-dot.render(f"{dir_path}/licenses", format='png', cleanup=True)
-# dot.render(f"{dir_path}/licenses.gv")
+def create_table(html_file, out_file):
+    dot = graphviz.Digraph()
+    dot.attr("node", shape="none")
+    # https://www.graphviz.org/doc/info/shapes.html
+    table_html = open(html_file, "r").read()
+    dot.node("table", label=table_html)
+    dot.render(out_file, format="png", cleanup=True)
 
-# TODO storage option table?
+# license table
 
-dot = graphviz.Digraph()
-dot.attr('node', shape='none')
-table_html = open(f"{dir_path}/storage_options.html", "r").read()
-dot.node('table', label=table_html)
-dot.render(f"{dir_path}/storage_options", format='png', cleanup=True)
-# dot.render(f"{dir_path}/storage_options.gv")
+create_table(
+    f"{dir_path}/licenses.html",
+    f"{dir_path}/licenses"
+)
 
-# TODO broken experimental workflow
+# storage options table
 
-# TODO better experimental workflow
+create_table(
+    f"{dir_path}/storage_options.html",
+    f"{dir_path}/storage_options"
+)
+
+# current experimental workflow
+
+dot = graphviz.Digraph("Title", comment="current experimental workflow")
+dot.attr(rankdir="LR")
+dot.node("d1", "raw data")
+dot.node("c1", "preprocessing code")
+dot.node("d2", "derivative data")
+dot.node("c2", "analysis code")
+dot.node("f", "figures")
+
+dot.edges([("d1","d2"), ("d2","f")])
+dot.edge("c1", "d2", weight="0")
+dot.edge("c2", "f", weight="0")
+
+# with dot.subgraph(name="cluster A") as g:
+#     g.attr(style="dotted", shape="circle")
+#     g.node("c", shape="box")
+#     g.node("c1", shape="box")
+dot.render(f"{dir_path}/current_workflow", format="png", cleanup=True)
+
+
+# updated experimental workflow
+
+dot = graphviz.Digraph("Title", comment="updated experimental workflow")
+# dot.attr(label=r"\G")
+with dot.subgraph(name="cluster_local") as g:
+    g.attr(label="local development environment", style="dotted")
+    # g.node("A1", "Node A1", style="invis", shape="point")
+    g.node("c0", "code", shape="box")
+    g.node("d0", "data", shape="box")
+with dot.subgraph(name="cluster_archive") as g:
+    g.attr(label="archive", style="dotted")
+    g.node("c1", "code", shape="box")
+    g.node("d1", "data", shape="box")
+with dot.subgraph(name="cluster_repr") as g:
+    g.attr(label="reproduction", style="dotted")
+    g.node("c2", "code", shape="box")
+    g.node("d2", "data", shape="box")
+dot.edge("c0", "c1")
+dot.edge("c1", "c2")
+dot.render(f"{dir_path}/updated_workflow", format="png", cleanup=True)
 
 # upload workflow
 
@@ -41,7 +84,7 @@ dot.node("6", "Upload to archive")
 
 dot.edges(["15", "25", "35", "45", "56"])
 
-dot.render(f"{dir_path}/upload.gv")
+dot.render(f"{dir_path}/upload", format="png", cleanup=True)
 
 
 # usage workflow
@@ -57,7 +100,7 @@ dot.node("7", "Launch iPython kernel")
 
 dot.edges(["12", "23", "34", "35", "36", "37"])
 
-dot.render(f"{dir_path}/usage.gv")
+dot.render(f"{dir_path}/usage", format="png", cleanup=True)
 
 def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.png", ignoreList=None):
 
@@ -97,7 +140,7 @@ def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.pn
 
 create_ascii_file_chart()
 create_ascii_file_chart(
-    filepath="../arts-of-example",
+    filepath=f"{dir_path}/arts-min-req-file-structure",
     outfile=f"{dir_path}/file_structure_minimal.png",
     ignoreList=[]
 )
