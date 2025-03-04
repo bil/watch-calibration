@@ -59,32 +59,45 @@ dot.edges(["12", "23", "34", "35", "36", "37"])
 
 dot.render(f"{dir_path}/usage.gv")
 
-ascii_files = DisplayTree(
-    ".",
-    stringRep=True,
-    ignoreList=[
-        "watch_calibration",
-        "watch_calibration.egg-info",
-        "*.wav",
-        "build",
-    ]
+def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.png", ignoreList=None):
+
+    if ignoreList is None:
+        ignoreList = [
+            "raw_data",
+            "deriv_data",
+            "watch_calibration.egg-info",
+            "*.wav",
+            "build",
+        ]
+
+    ascii_files = DisplayTree(
+        filepath,
+        stringRep=True,
+        ignoreList=ignoreList
+    )
+
+    print(ascii_files)
+
+    # Create a new Image
+    # make sure the dimensions (W and H) are big enough for the ascii art
+    W, H = (400,25*ascii_files.count('\n'))
+    im = Image.new("RGBA",(W,H),"white")
+
+    font = ImageFont.truetype(f"{dir_path}/SourceCodePro-Regular.otf", 20)
+
+    # Draw text to image
+    draw = ImageDraw.Draw(im)
+    # w, h = draw.textsize(ascii_files)
+    # draws the text in the center of the image
+    # draw.text(((W-w)/2,(H-h)/2), ascii_text, fill="black")
+    draw.multiline_text((10, 10), ascii_files, font=font, fill=(0,0,0))
+
+    # Save Image
+    im.save(outfile, "PNG")
+
+create_ascii_file_chart()
+create_ascii_file_chart(
+    filepath="../arts-of-example",
+    outfile=f"{dir_path}/file_structure_minimal.png",
+    ignoreList=[]
 )
-
-print(ascii_files)
-
-# Create a new Image
-# make sure the dimensions (W and H) are big enough for the ascii art
-W, H = (400,950)
-im = Image.new("RGBA",(W,H),"white")
-
-font = ImageFont.truetype(f"{dir_path}/SourceCodePro-Regular.otf", 20)
-
-# Draw text to image
-draw = ImageDraw.Draw(im)
-# w, h = draw.textsize(ascii_files)
-# draws the text in the center of the image
-# draw.text(((W-w)/2,(H-h)/2), ascii_text, fill="black")
-draw.multiline_text((10, 10), ascii_files, font=font, fill=(0,0,0))
-
-# Save Image
-im.save(f"{dir_path}/file_structure.png", "PNG")
