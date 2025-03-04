@@ -8,8 +8,9 @@ from PIL import Image, ImageFont, ImageDraw
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
-def create_table(html_file, out_file):
+def create_table(title, html_file, out_file):
     dot = graphviz.Digraph()
+    dot.attr(label=title, labelloc="t")
     dot.attr("node", shape="none")
     # https://www.graphviz.org/doc/info/shapes.html
     table_html = open(html_file, "r").read()
@@ -19,6 +20,7 @@ def create_table(html_file, out_file):
 # license table
 
 create_table(
+    "Open-source License Comparison",
     f"{dir_path}/licenses.html",
     f"{dir_path}/licenses"
 )
@@ -26,6 +28,7 @@ create_table(
 # storage options table
 
 create_table(
+    "Accessible, Persistent, Trusted Archive Comparison",
     f"{dir_path}/storage_options.html",
     f"{dir_path}/storage_options"
 )
@@ -140,7 +143,7 @@ def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.pn
 
 create_ascii_file_chart()
 create_ascii_file_chart(
-    filepath=f"{dir_path}/arts-min-req-file-structure",
+    filepath=f"{dir_path}/arts-minimal-file-structure",
     outfile=f"{dir_path}/file_structure_minimal.png",
     ignoreList=[]
 )
