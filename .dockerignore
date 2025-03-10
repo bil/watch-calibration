@@ -3,10 +3,9 @@
 
 # Allow some
 !requirements.txt
-!setup.py
+!pyproject.toml
 !README.md
 !watch_calibration/
-
 
 # TODO remove
 !output.wav

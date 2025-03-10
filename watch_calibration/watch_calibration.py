@@ -20,6 +20,8 @@ try:
 except:
     SND_DEFINED = False
 
+PWD = os.path.realpath(os.path.dirname(__file__))
+DEFAULT_AUDIO = os.path.join(PWD, "..", os.environ["ARTS_RAW_DATA_PATH"], "data_W241130_W241130.wav")
 FREQ_GUESS = 6.
 WINDOW_LEN = 2000
 PEAK_PROMINENCE = 0.003
@@ -55,9 +57,6 @@ class WatchCalibration:
         peaks = sps.find_peaks(
             A, height=np.mean(A)*8, distance=self.fs//400
         )[0]
-        print(len(audio))
-        print("HERE")
-        print(peaks)
         self.freq_band = (peaks[0], peaks[-1])
         return A, peaks
 
@@ -151,6 +150,7 @@ class WatchCalibration:
     def save_audio_to_file(
         self, duration, outfile="output.wav", input_device=None, generate=False
     ):
+        print(input_device)
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
             return
@@ -181,7 +181,7 @@ class WatchCalibration:
 
 
     # TODO change filename to archive loc and support s3 pulls?
-    def load_audio(self, filename="data_W241130_W241130.wav"):
+    def load_audio(self, filename=DEFAULT_AUDIO):
         return librosa.load(filename, sr=self.fs)
 
 

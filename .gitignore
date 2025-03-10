@@ -185,5 +185,5 @@ cython_debug/
 #.idea/
 
 
-!figs/arts-min-req-file-structure/*
-figs/arts-min-req-file-structure/.DS_Store
+!figs/arts-minimal-file-structure/*
+figs/arts-minimal-file-structure/.DS_Store

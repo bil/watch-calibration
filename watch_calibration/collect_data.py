@@ -1,8 +1,9 @@
 import sys
 import argparse
-from .watch_calibration import WatchCalibration
+from watch_calibration import WatchCalibration
 
 def collect_data():
+    print(sys.argv)
     parser = argparse.ArgumentParser(
         prog="wc-collect-data",
         description="Watch Calibration data collection helper script"
@@ -27,6 +28,7 @@ def collect_data():
         help="set flag to generate watch using librosa"
     )
     args = parser.parse_args()
+    print(args.input_device)
 
     wc = WatchCalibration()
     wc.save_audio_to_file(
@@ -35,4 +37,3 @@ def collect_data():
         input_device=args.input_device,
         generate=args.generate
     )
-    print("COLLECT DATA!")

@@ -1,6 +1,7 @@
 FROM python:3.10.14
 
 RUN apt-get update
+# RUN apt-get install -y alsa-base libasound2-dev alsa-utils
 RUN apt-get install -y libportaudio2 libsndfile1
 
 RUN mkdir -p /usr/src/exp
@@ -10,4 +11,4 @@ COPY . .
 
 RUN pip install -r requirements.txt
 
-RUN python3 -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()'
+# RUN python3 -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()'

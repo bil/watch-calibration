@@ -3,11 +3,12 @@
 
 # Allow some
 !requirements.txt
-!setup.py
+!pyproject.toml
 !README.md
 !watch_calibration/
-!Watch Calibration.ipynb
+!notebooks/
 
 # TODO remove
+!raw_data
 !data_W241130_W241130.wav
 !output.wav
