@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   sodipodi:docname="figure_2.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showguides="false"
+     inkscape:zoom="1.3845047"
+     inkscape:cx="314.91405"
+     inkscape:cy="244.8529"
+     inkscape:window-width="1728"
+     inkscape:window-height="1051"
+     inkscape:window-x="1920"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <rect
+       x="353.19489"
+       y="67.894314"
+       width="14.445599"
+       height="18.779278"
+       id="rect28" />
+    <rect
+       x="-6598.7353"
+       y="8429.2569"
+       width="546.20404"
+       height="605.25312"
+       id="rect18" />
+    <rect
+       x="-9325.5482"
+       y="-3756.1236"
+       width="8677.9406"
+       height="3410.7329"
+       id="rect6" />
+    <rect
+       x="-6648.7704"
+       y="-8116.6808"
+       width="172.69534"
+       height="302.21684"
+       id="rect5" />
+    <rect
+       x="-9196.0267"
+       y="-9498.2435"
+       width="4101.5142"
+       height="1597.4319"
+       id="rect4" />
+    <rect
+       x="-8591.593"
+       y="-9411.8958"
+       width="3065.3422"
+       height="1467.9104"
+       id="rect3" />
+    <rect
+       x="-8850.636"
+       y="-9627.765"
+       width="9411.8959"
+       height="3540.2545"
+       id="rect2" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.376791;stroke-dasharray:none;stroke-opacity:1"
+       id="rect17"
+       width="61.915943"
+       height="36.804783"
+       x="4.9386945"
+       y="7.1972647" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.50644;stroke-dasharray:none;stroke-opacity:1"
+       id="rect17-2"
+       width="112.25038"
+       height="36.675194"
+       x="77.147682"
+       y="7.4630251" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:13.2292;stroke-dasharray:none;stroke-opacity:1"
+       x="151.54488"
+       y="49.495728"
+       id="text25"><tspan
+         sodipodi:role="line"
+         id="tspan25"
+         style="stroke-width:13.2292"
+         x="151.54488"
+         y="49.495728"></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.1;stroke-dasharray:none;stroke-opacity:1"
+       x="9.7462645"
+       y="24.652317"
+       id="text26"><tspan
+         id="tspan26"
+         style="stroke-width:0.1;stroke-dasharray:none"
+         x="9.7462645"
+         y="24.652317"
+         sodipodi:role="line">raw data</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.1;stroke-dasharray:none;stroke-opacity:1"
+       x="83.894318"
+       y="24.652317"
+       id="text27"><tspan
+         sodipodi:role="line"
+         id="tspan27"
+         style="stroke-width:0.1"
+         x="83.894318"
+         y="24.652317">derivative data</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.1"
+         x="83.894318"
+         y="28.621067"
+         id="tspan28" /></text>
+    <text
+       xml:space="preserve"
+       transform="scale(0.26458333)"
+       id="text28"
+       style="fill:#000000;text-align:start;writing-mode:lr-tb;text-orientation:auto;direction:ltr;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:0.37795276;stroke-dasharray:none;white-space:pre;shape-inside:url(#rect28)" />
+  </g>
+</svg>

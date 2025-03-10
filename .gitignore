@@ -12,10 +12,6 @@ deriv_data/
 # audio data files
 *.wav
 
-# saved plots
-fig*.svg
-fig*.html
-
 # archive.org CLI
 ia
 
