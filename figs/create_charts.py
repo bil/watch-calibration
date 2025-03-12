@@ -15,7 +15,7 @@ def create_table(title, html_file, out_file):
     # https://www.graphviz.org/doc/info/shapes.html
     table_html = open(html_file, "r").read()
     dot.node("table", label=table_html)
-    dot.render(out_file, format="png", cleanup=True)
+    dot.render(out_file, format="svg", cleanup=True)
 
 # license table
 
@@ -61,7 +61,7 @@ dot.edge("f", "a", style="invis", weight="10")
 dot.edge("f", "g", style="invis", weight="10")
 dot.edge("c1", "c2", style="invis", weight="10")
 
-dot.render(f"{dir_path}/current_workflow", format="png", cleanup=True)
+dot.render(f"{dir_path}/current_workflow", format="svg", cleanup=True)
 
 
 # updated experimental workflow
@@ -117,7 +117,7 @@ dot.edge("d1", "c2", style="invis", weight="1")
 # dot.edge("c1", "c2")
 
 
-dot.render(f"{dir_path}/updated_workflow", format="png", cleanup=True)
+dot.render(f"{dir_path}/updated_workflow", format="svg", cleanup=True)
 
 # upload workflow
 
@@ -131,7 +131,7 @@ dot.node("6", "Upload to archive")
 
 dot.edges(["15", "25", "35", "45", "56"])
 
-dot.render(f"{dir_path}/upload", format="png", cleanup=True)
+dot.render(f"{dir_path}/upload", format="svg", cleanup=True)
 
 
 # usage workflow
@@ -147,9 +147,9 @@ dot.node("7", "Launch iPython kernel")
 
 dot.edges(["12", "23", "34", "35", "36", "37"])
 
-dot.render(f"{dir_path}/usage", format="png", cleanup=True)
+dot.render(f"{dir_path}/usage", format="svg", cleanup=True)
 
-def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.png", ignoreList=None):
+def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.svg", ignoreList=None):
 
     if ignoreList is None:
         ignoreList = [
@@ -188,6 +188,6 @@ def create_ascii_file_chart(filepath=".", outfile=f"{dir_path}/file_structure.pn
 create_ascii_file_chart()
 create_ascii_file_chart(
     filepath=f"{dir_path}/arts-minimal-file-structure",
-    outfile=f"{dir_path}/file_structure_minimal.png",
+    outfile=f"{dir_path}/file_structure_minimal.svg",
     ignoreList=[]
 )
