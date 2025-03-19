@@ -4,7 +4,6 @@ source "$(dirname $0 )/config.env"
 
 ENGINE=podman
 CF="$(dirname $0)/watch-calibration.cf"
-# CF="$(dirname $0)/watch-calibration-alpine.cf"
 IF="$(dirname $0)/.containerignore"
 ENV_FILE="$(dirname $0)/config.env"
 
@@ -54,8 +53,7 @@ if [[ $GENERATE_FIGURES -eq 1 ]]; then
       -v $(dirname $0)/$ARTS_RAW_DATA_PATH:/usr/src/exp/$ARTS_RAW_DATA_PATH   \
       -v $(dirname $0)/$ARTS_OUTPUT_PATH:/figs   \
       watch-calibration         \
-      /bin/sh
-      # bash -c "python -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()' ; cp /usr/src/exp/fig1.svg /usr/src/exp/fig1.html /figs"
+      bash -c "python -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()' ; cp /usr/src/exp/fig1.svg /usr/src/exp/fig1.html /figs"
 fi
 
 if [[ $LAUNCH_JUPYTER -eq 1 ]]; then
