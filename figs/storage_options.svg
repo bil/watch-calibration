@@ -29,7 +29,7 @@
 <polygon fill="#e0e0e0" stroke="none" points="722.5,-342.25 722.5,-378.75 799.5,-378.75 799.5,-342.25 722.5,-342.25"/>
 <text text-anchor="start" x="732.5" y="-356.45" font-family="Times,serif" font-weight="bold" font-size="14.00">Nonprofit</text>
 <polygon fill="#e0e0e0" stroke="none" points="799.5,-342.25 799.5,-378.75 1084.25,-378.75 1084.25,-342.25 799.5,-342.25"/>
-<text text-anchor="start" x="898.75" y="-356.45" font-family="Times,serif" font-weight="bold" font-size="14.00">Storage Limits</text>
+<text text-anchor="start" x="901.38" y="-356.45" font-family="Times,serif" font-weight="bold" font-size="14.00">Storage limits</text>
 <polygon fill="#e0e0e0" stroke="none" points="1084.25,-342.25 1084.25,-378.75 1210.75,-378.75 1210.75,-342.25 1084.25,-342.25"/>
 <text text-anchor="start" x="1094.25" y="-356.45" font-family="Times,serif" font-weight="bold" font-size="14.00">Bare repo support</text>
 <text text-anchor="start" x="18" y="-318.57" font-family="Times,serif" font-size="14.00">Stanford Digital Repository</text>
@@ -47,7 +47,7 @@
 <text text-anchor="start" x="338.12" y="-281.32" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="403.88" y="-281.32" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="442.25" y="-281.7" font-family="Times,serif" font-size="14.00">✓, DOI</text>
-<text text-anchor="start" x="571" y="-280.95" font-family="Times,serif" font-size="14.00">~</text>
+<text text-anchor="start" x="569.5" y="-281.32" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="683.62" y="-281.32" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="755.75" y="-281.32" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="883.38" y="-280.95" font-family="Times,serif" font-size="14.00">1 TB; 2.5 GB per file</text>

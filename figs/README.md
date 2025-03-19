@@ -14,4 +14,4 @@ This folder contains the code and content that generates all the figures for the
 python create_charts.py
 ```
 
-## Figueres
+## Figures
