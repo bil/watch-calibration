@@ -1,23 +1,16 @@
 # watch-calibration
-Template to create Python packages
 
-## Initial Setup
+This watch calibration example showcases how an experiment might be designed to be compatible with the ARTS open framework. It includes raw audio data of a watch movement ticking and is written as a Python package. The experiment is most easily followed using the included jupyter notebook.
 
-```bash
-./setup.sh
-```
-
-## Update Dependencies
-
-Add new dependencies to `requirements.in` and then run:
-
-```bash
-./update-deps.sh
-```
+The experiment may be run with or without a container.
 
 ## Container Usage
 
 All container functionality is made available using the `./run.sh` script. The default functionality is to generate plots and other functionality is made available through passing command line arguments.
+
+### Configuration
+
+Modify config.env
 
 ### Generate Figures
 
@@ -51,10 +44,33 @@ Once the ipython prompt shows up, data can be loaded and analysis run with:
 
 ```bash
 wc = WatchCalibration()
-wc.load_audio("data_W241130_W241130.wav")
+wc.load_audio("raw_data/data_W241130_W241130.wav")
 wc.generate_figures()
 ... TODO perform analysis command
 ```
+
+## Local Usage (without a container)
+
+The experiment may also be run outside of a container for those wishing to build the environment from scratch or run the analysis with updated dependencies.
+
+### Initial Setup
+
+```bash
+./setup.sh
+```
+
+### Update Dependencies
+
+Add new dependencies to `requirements.in` and then run:
+
+```bash
+./update-deps.sh
+```
+
+## Rebuilding the container
+
+podman 7cpus, 4GiB memory
+
 
 ## Publish Package
 
