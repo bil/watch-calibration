@@ -14,10 +14,6 @@ LAUNCH_IPYTHON=0
 COLLECT_DATA=0
 EXPORT_IMAGE=0
 
-POSITIONAL_ARGS=()
-
-# generate figures
-
 case $1 in
   -g|--generate-figures)
     GENERATE_FIGURES=1
@@ -43,29 +39,26 @@ case $1 in
     echo "Unknown option $1"
     exit 1
     ;;
-  # *)
-  #   POSITIONAL_ARGS+=("$1") # save positional arg
-  #   shift
-  #   ;;
 esac
 
-# set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+# TODO load image by default if present; build if flag specified
 
 # $ENGINE build -f $CF -t watch-calibration .
 $ENGINE build -f $CF --ignorefile $IF -t watch-calibration .
 
+# generate figures
 if [[ $GENERATE_FIGURES -eq 1 ]]; then
-    $ENGINE run --rm            \
+    $ENGINE run --rm  -it         \
       --name watch-calibration-figures  \
       --env-file $ENV_FILE      \
-      -v $ARTS_RAW_DATA_PATH:/usr/src/exp/$ARTS_RAW_DATA_PATH   \
-      -v $(pwd)/figures:/figs   \
+      -v $(dirname $0)/$ARTS_RAW_DATA_PATH:/usr/src/exp/$ARTS_RAW_DATA_PATH   \
+      -v $(dirname $0)/$ARTS_OUTPUT_PATH:/figs   \
       watch-calibration         \
-      bash -c "python -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()' ; cp /usr/src/exp/fig1.svg /usr/src/exp/fig1.html /figs"
+      /bin/sh
+      # bash -c "python -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()' ; cp /usr/src/exp/fig1.svg /usr/src/exp/fig1.html /figs"
 fi
 
 if [[ $LAUNCH_JUPYTER -eq 1 ]]; then
-  # jupyter notebook --config "$(dirname $0)/notebooks/jupyter_notebook_config.py"
     $ENGINE run --rm -it        \
       --name watch-calibration-jupyter  \
       --env-file $ENV_FILE      \
