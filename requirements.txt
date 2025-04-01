@@ -34,7 +34,7 @@ beautifulsoup4==4.13.3
     # via nbconvert
 bleach[css]==6.2.0
     # via nbconvert
-bokeh==3.7.0
+bokeh==3.6.3
     # via -r requirements.in
 certifi==2025.1.31
     # via
@@ -215,8 +215,6 @@ mistune==3.1.1
     # via nbconvert
 msgpack==1.1.0
     # via librosa
-narwhals==1.31.0
-    # via bokeh
 nbclient==0.10.2
     # via nbconvert
 nbconvert==7.16.6

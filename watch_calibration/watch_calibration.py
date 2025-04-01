@@ -21,34 +21,292 @@ except:
     SND_DEFINED = False
 
 PWD = os.path.realpath(os.path.dirname(__file__))
-DEFAULT_AUDIO = os.path.join(PWD, "..", os.environ["ARTS_RAW_DATA_PATH"], "data_W241130_W241130.wav")
+RAW_DATA_PATH = os.path.join(PWD, "..", os.environ["ARTS_RAW_DATA_PATH"])
+DERIV_DATA_PATH = os.path.join(PWD, "..", os.environ["ARTS_DERIV_DATA_PATH"])
+DEFAULT_AUDIO = os.path.join(RAW_DATA_PATH, "data_W241130_W241130.wav")
 FREQ_GUESS = 6.
-WINDOW_LEN = 2000
-PEAK_PROMINENCE = 0.003
+WINDOW_LEN = 6000
+PEAK_PROMINENCE = 0.002
+F_FUND = 6
 
 class WatchCalibration:
     """ WatchCalibration class  """
 
-    def __init__(self, fs=44100):
-        """ Initialize Watch-Calibration. """
+    def __init__(self, fs=44100, audio_file=None):
+        """ Initialize WatchCalibration. """
 
+        # constants
         self.fs = fs
+        if audio_file is None:
+            self.audio_file = DEFAULT_AUDIO
+        else:
+            self.audio_file = audio_file
         self.freq_quess = FREQ_GUESS
         self.window_len = WINDOW_LEN
         self.peak_prominence = PEAK_PROMINENCE
+        self.f_fund = F_FUND
+
+        # derivative data
+        self.audio_len = None
+        self.audio_wins = None
+        self.peaks = None
+
+        # calculated from stft
         self.freq_band = None
 
-    def __repr__(self):
-        """ Return Watch-Calibration name. """
 
-        return self.__class__.__name__
+    ## Class Functions ########################################################
+
+    @classmethod
+    def query_devices(self):
+        if not SND_DEFINED:
+            print("sounddevice library could not be loaded.")
+            return
+
+        print(sd.query_devices())
+
+
+    def save_audio_to_file(
+        self, duration, outfile="output.wav", input_device=None, generate=False
+    ):
+        print(input_device)
+        if not SND_DEFINED:
+            print("sounddevice library could not be loaded.")
+            return
+
+        if generate:
+            # generate with librosa
+            recording = librosa.clicks(
+                times=np.arange(duration, step=1./FREQ_GUESS),
+                sr=self.fs, length=self.fs*duration, click_duration=0.01
+            )
+        else:
+            # record from audio interface
+            recording = sd.rec(int(duration * self.fs), samplerate=self.fs, channels=1, device=input_device)
+
+        sd.wait()  # Wait until recording is finished
+        write(outfile, self.fs, recording)  # Save as WAV file
+
+
+    def play_audio(self, filename, output_device=sd.default.device):
+        if not SND_DEFINED:
+            print("sounddevice library could not be loaded.")
+            return
+
+        # Extract data and sampling rate from file
+        data, fs = sf.read(filename, dtype='float32')
+        sd.play(data, fs, device=output_device)
+        status = sd.wait()  # Wait until file is done playing
+
+
+    # TODO change filename to archive loc and support s3 pulls?
+    def load_audio(self, filename=None):
+        if filename is None:
+            filename = self.audio_file
+        return librosa.load(filename, sr=self.fs)
+
+
+    def plot_audio(self, audio, plt_secs=None):
+        if plt_secs:
+            audio_win = audio[-self.fs*plt_secs:]
+
+        fig = plt.figure(figsize=(8,2))
+        fig.canvas.header_visible = False
+        plt.plot(audio_win)
+        plt.ylim(np.min(audio_win), np.max(audio_win))
+        plt.xlabel("time (samples)")
+        plt.title("Audio signal")
+        plt.show()
+
+        fig = plt.figure(figsize=(8,2))
+        fig.canvas.header_visible = False
+        A, peaks = self.calculate_freq_band(audio)
+        plt.plot(A, zorder=1)
+        plt.fill_between(peaks, np.min(A), np.max(A), alpha=0.7,zorder=10)
+        plt.xlabel("frequency (Hz)")
+        plt.ylabel("power")
+        plt.title(f"FFT and frequency band of interest (Hz)")
+        plt.show()
+
+        # spectral
+        fig = plt.figure(figsize=(8,2))
+        fig.canvas.header_visible = False
+        D = librosa.amplitude_to_db(np.abs(librosa.stft(audio_win)), ref=np.max)
+        librosa.display.specshow(D)
+        plt.xlabel("time")
+        plt.ylabel("frequency")
+        plt.title("Spectrogram")
+
+
+    def create_deriv_from_raw(self, raw_audio=None, filter=False):
+        if raw_audio is None:
+            raw_audio, _ = self.load_audio()
+
+        audio = self.trim_audio(raw_audio)
+        audio, peaks, _ = self.find_peaks(audio, filter=filter)
+
+        # create audio windows
+        audio_wins = []
+        for p in peaks:
+            audio_wins.append(audio[p-self.window_len//2:p+self.window_len//2])
+
+        self.audio_len = len(audio)
+        self.audio_wins = audio_wins
+        self.peaks = peaks
+        return audio
+
+
+    def save_deriv_data(
+        self, deriv_data_path=DERIV_DATA_PATH
+    ):
+        # save audio windows and onset times to file
+
+        if self.audio_wins is None or self.peaks is None:
+            raise ValueError("Run create_deriv_from_raw function first")
+
+        # save derivative data
+        np.save(f"{deriv_data_path}/audio_len.npy", self.audio_len)
+        np.save(f"{deriv_data_path}/audio.npy", self.audio_wins)
+        np.save(f"{deriv_data_path}/peaks.npy", self.peaks)
+
+
+    def view_correlations(
+        self, raw_audio=None, filter=False, shift=False,
+        hilbert=False, envelope=False, plot_wins=False
+    ):
+        # TODO do this with derivative data?
+        #self.load_deriv_data()
+        # onset_times = self.peaks / self.fs
+        # diffs = np.diff(onset_times)
+
+        if raw_audio is None:
+            raw_audio, _ = self.load_audio()
+
+        if hilbert and envelope:
+            raise ValueError("Set only hilbert or envelope.")
+
+        audio = self.trim_audio(raw_audio)
+        audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
+
+        if shift or hilbert or envelope:
+            peaks = self.shift_peaks(
+                audio, peaks, hilbert=hilbert, envelope=envelope
+            )
+
+        onset_times = peaks / self.fs
+        diffs = np.diff(onset_times)
+
+
+        print(np.mean(diffs))
+
+        plt.figure()
+        plt.hist(diffs, bins="auto")
+        plt.title(f"Tick time diffs (Mean: {np.mean(diffs):.5f}; StdDev: {np.std(diffs):.5f})")
+        plt.xlabel("time (s)")
+        plt.ylabel("occurrences")
+        plt.show()
+
+
+        if not plot_wins:
+            return
+
+        num_fig_cols = 10
+        num_fig_rows = len(peaks)//num_fig_cols+1
+        with plt.ioff():
+            fig, axs = plt.subplots(num_fig_rows, num_fig_cols, squeeze=False)
+            fig.set_figheight(15)
+            fig.set_figwidth(15)
+            for i, peak in enumerate(peaks):
+                win_start = peak - self.window_len//2
+                win_end = peak + self.window_len//2
+                # if shift or hilbert or envelope:
+                #     win_start = peaks[i] - self.window_len//2
+                #     win_end = peaks[i] + self.window_len//2
+                win = audio[win_start:win_end]
+
+                ax = axs[i%num_fig_rows][i//num_fig_rows]
+                ax.axes.get_xaxis().set_visible(False)
+                ax.axes.get_yaxis().set_visible(False)
+
+                ax.plot(win)
+                ax.plot(peak-win_start, audio[peak], "x", color="orange")
+                ax.vlines(
+                    peaks[i]-win_start,
+                    np.min(win), np.max(win),
+                    color='r', alpha=0.8
+                )
+
+        return fig
+
+    def perform_analysis(self, deriv_data_path=DERIV_DATA_PATH, filter=False):
+        self.load_deriv_data()
+
+        onset_times = self.peaks / self.fs
+        diffs = np.diff(onset_times)
+
+        audio_dur = self.audio_len / self.fs
+
+        actual_last_click_time = onset_times[-1]
+        ideal_last_click_time = (
+            onset_times[0] + (len(onset_times) - 1) * 1./self.f_fund
+        )
+
+        drift = ideal_last_click_time - actual_last_click_time
+        drift_per_s = drift / audio_dur
+
+        drift_per_s = np.mean(diffs) * self.f_fund - 1.
+
+        print(np.mean(diffs))
+        print(onset_times[0] + (np.mean(diffs) * (len(onset_times) - 1)))
+
+
+        print(f"first tick time: {onset_times[0]:.4f} s")
+        print(f"actual last tick time: {actual_last_click_time:.4f}")
+        print(f"ideal last tick time: {ideal_last_click_time:.4f}")
+
+        # print drift values over various durations
+        SEC_IN_MIN = 60
+        SEC_IN_HOUR = SEC_IN_MIN * 60
+        SEC_IN_DAY = SEC_IN_HOUR * 24
+        SEC_IN_WEEK = SEC_IN_DAY * 7
+        SEC_IN_MONTH = SEC_IN_DAY * 30
+        SEC_IN_YEAR =  SEC_IN_DAY * 365
+        self.print_drift_over_time(
+            drift_per_s, SEC_IN_MIN, "minute", format_string="%0.5f"
+        )
+        self.print_drift_over_time(drift_per_s, SEC_IN_HOUR, "hour")
+        self.print_drift_over_time(drift_per_s, SEC_IN_DAY, "day")
+        self.print_drift_over_time(drift_per_s, SEC_IN_WEEK, "week")
+        self.print_drift_over_time(drift_per_s, SEC_IN_MONTH, "month (30 days)")
+        self.print_drift_over_time(drift_per_s, SEC_IN_YEAR, "year (365 days)")
+
+
+    def generate_figures(self, audio=None):
+        if audio is None:
+            audio, _ = self.load_audio()
+
+        # create figures
+        fig = plt.figure(figsize=(8,2))
+        fig.canvas.header_visible = False
+        plt.plot(audio)
+        plt.axis('off')
+        plt.gca().set_position([0, 0, 1, 1])
+        plt.savefig("fig1.svg")
+
+        # create HTML bokeh page
+        p = figure(title="Basic Title")#, plot_width=300, plot_height=300)
+        p.circle([1, 2], [3, 4])
+        output_file("fig1.html")
+        save(p)
+
 
     ## Class Utilities ########################################################
 
-    # TODO
-    # https://stackoverflow.com/questions/41492882/find-time-shift-of-two-signals-using-cross-correlation
+    def _normalize(self, x):
+        return (x - np.mean(x)) / np.max(x)
+
     def _corr_wins(self, w1, w2):
-        corr = sps.correlate(w1, w2)
+        corr = sps.correlate(w1, w2, mode="full")
         shift_amt = np.argmax(corr) - len(corr) // 2
         return shift_amt
 
@@ -72,6 +330,7 @@ class WatchCalibration:
             freq_band = self.freq_band
 
         b, a = sps.butter(6, freq_band, btype="bandpass", fs = self.fs)
+
         return sps.filtfilt(b, a, audio)
 
     def calculate_envelope(self, x):
@@ -137,112 +396,33 @@ class WatchCalibration:
         return shifted_peaks
 
 
-    ## Class Functions ########################################################
-
-    def query_devices(self):
-        if not SND_DEFINED:
-            print("sounddevice library could not be loaded.")
-            return
-
-        print(sd.query_devices())
-
-
-    def save_audio_to_file(
-        self, duration, outfile="output.wav", input_device=None, generate=False
-    ):
-        print(input_device)
-        if not SND_DEFINED:
-            print("sounddevice library could not be loaded.")
-            return
-
-        if generate:
-            # generate with librosa
-            recording = librosa.clicks(
-                times=np.arange(duration, step=1./FREQ_GUESS),
-                sr=self.fs, length=self.fs*duration, click_duration=0.01
-            )
+    def pad_wins(self, w1, w2, shift_amt):
+        if shift_amt > 0:
+            w1 = np.pad(w1, (0,shift_amt//2))
+            w2 = np.pad(w2, (shift_amt//2,0))
         else:
-            # record from audio interface
-            recording = sd.rec(int(duration * self.fs), samplerate=self.fs, channels=1, device=input_device)
+            w2 = np.pad(w2, (0,-shift_amt//2))
+            w1 = np.pad(w1, (-shift_amt//2,0))
 
-        sd.wait()  # Wait until recording is finished
-        write(outfile, self.fs, recording)  # Save as WAV file
+        return w1, w2
 
-
-    def play_audio(self, filename, output_device=sd.default.device):
-        if not SND_DEFINED:
-            print("sounddevice library could not be loaded.")
-            return
-
-        # Extract data and sampling rate from file
-        data, fs = sf.read(filename, dtype='float32')
-        sd.play(data, fs, device=output_device)
-        status = sd.wait()  # Wait until file is done playing
-
-
-    # TODO change filename to archive loc and support s3 pulls?
-    def load_audio(self, filename=DEFAULT_AUDIO):
-        return librosa.load(filename, sr=self.fs)
-
-
-    def plot_audio(self, audio, plt_secs=None):
-        if plt_secs:
-            audio_win = audio[-self.fs*plt_secs:]
-
+    def plot_wins(self, w1, w2, shift_amt=0, title=None):
         fig = plt.figure(figsize=(8,2))
         fig.canvas.header_visible = False
-        plt.plot(audio_win)
-        plt.ylim(np.min(audio_win), np.max(audio_win))
-        plt.xlabel("time (samples)")
-        plt.title("Audio signal")
+
+        w1, w2 = self.pad_wins(w1, w2, shift_amt)
+        plt.plot(w1)
+        plt.plot(w2)
+
+        if title:
+            plt.title(title)
+
         plt.show()
 
-        fig = plt.figure(figsize=(8,2))
-        fig.canvas.header_visible = False
-        A, peaks = self.calculate_freq_band(audio)
-        plt.plot(A, zorder=1)
-        plt.fill_between(peaks, np.min(A), np.max(A), alpha=0.7,zorder=10)
-        plt.xlabel("frequency (Hz)")
-        plt.ylabel("power")
-        plt.title(f"FFT and frequency band of interest (Hz)")
-        plt.show()
-
-        # spectral
-        fig = plt.figure(figsize=(8,2))
-        fig.canvas.header_visible = False
-        D = librosa.amplitude_to_db(np.abs(librosa.stft(audio_win)), ref=np.max)
-        librosa.display.specshow(D)
-        plt.xlabel("time")
-        plt.ylabel("frequency")
-        plt.title("Spectrogram")
 
 
-    def perform_analysis(self, audio, filter=False, raw_audio=None):
-        if raw_audio is None:
-            raw_audio, _ = self.load_audio()
-
-        audio = self.trim_audio(raw_audio)
-        audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
-
-        diffs = np.diff(onset_times)
-
-        audio_dur = len(audio) / self.fs
-        f_fund = 6
-
-        actual_last_click_time = onset_times[-1]
-        ideal_last_click_time = (
-            onset_times[0] + (len(onset_times) - 1) * 1./f_fund
-        )
-
-        drift = ideal_last_click_time - actual_last_click_time
-        drift_per_sec = drift / audio_dur
-
-        print(f"first click time: {onset_times[0]:.4f} s")
-        print(f"actual last click time: {actual_last_click_time:.4f}")
-        print(f"ideal last click time: {ideal_last_click_time:.4f}")
-
-        def print_drift_over_time(
-            drift_per_sec, seconds, dur_string, format_string = "%0.2f"
+    def print_drift_over_time(
+            self, drift_per_sec, seconds, dur_string, format_string = "%0.2f"
         ):
             drift = drift_per_sec * seconds
             units = "s"
@@ -252,88 +432,13 @@ class WatchCalibration:
             x = ".2f"
             print(f"{format_string} {units} drift in a {dur_string}" % drift)
 
-        # minute
-        SEC_IN_MIN = 60
-        print_drift_over_time(
-            drift_per_sec, SEC_IN_MIN, "minute", format_string="%0.5f"
-        )
 
-        # day
-        SEC_IN_DAY = 86400
-        print_drift_over_time(drift_per_sec, SEC_IN_DAY, "day")
+    def load_deriv_data(self, deriv_data_path=DERIV_DATA_PATH):
+        if self.audio_len is None:
+            self.audio_len = np.load(f"{deriv_data_path}/audio_len.npy")
 
-        # week
-        SEC_IN_WEEK = SEC_IN_DAY * 7
-        print_drift_over_time(drift_per_sec, SEC_IN_WEEK, "week")
-        # month
-        SEC_IN_MONTH = SEC_IN_DAY * 30
-        print_drift_over_time(drift_per_sec, SEC_IN_MONTH, "month (30 days)")
+        if self.audio_wins is None:
+            self.audio_wins = np.load(f"{deriv_data_path}/audio.npy")
 
-        # year
-        SEC_IN_YEAR =  SEC_IN_DAY * 365
-        print_drift_over_time(drift_per_sec, SEC_IN_YEAR, "year (365 days)")
-
-
-    def view_correlations(
-        self, raw_audio=None, shift=False, hilbert=False, envelope=False
-    ):
-        if raw_audio is None:
-            raw_audio, _ = self.load_audio()
-
-        if hilbert and envelope:
-            raise ValueError("Set only hilbert or envelope.")
-
-        audio = self.trim_audio(raw_audio)
-        audio, peaks, onset_times = self.find_peaks(audio, filter=envelope)
-
-        if shift:
-            peaks = self.shift_peaks(peaks, env, hilbert=hilbert, envelope=envelope)
-
-        num_fig_cols = 10
-        num_fig_rows = len(peaks)//num_fig_cols+1
-        with plt.ioff():
-            fig, axs = plt.subplots(num_fig_rows, num_fig_cols, squeeze=False)
-            fig.set_figheight(15)
-            fig.set_figwidth(15)
-            for i, peak in enumerate(peaks):
-                win_start = peak - WINDOW_LEN//2
-                win_end = peak + WINDOW_LEN//2
-                if shift or hilbert or envelope:
-                    win_start = peaks[i] - WINDOW_LEN//2
-                    win_end = peaks[i] + WINDOW_LEN//2
-                win = audio[win_start:win_end]
-
-                ax = axs[i%num_fig_rows][i//num_fig_rows]
-                ax.axes.get_xaxis().set_visible(False)
-                ax.axes.get_yaxis().set_visible(False)
-
-                ax.plot(win)
-                ax.plot(peak-win_start, audio[peak], "x", color="orange")
-                ax.vlines(
-                    peaks[i]-win_start,
-                    np.min(win), np.max(win),
-                    color='r', alpha=0.8
-                )
-                # break
-
-        return fig
-
-
-    def generate_figures(self, audio=None):
-        if audio is None:
-            audio, _ = self.load_audio()
-
-        # create figures
-        fig = plt.figure(figsize=(8,2))
-        fig.canvas.header_visible = False
-        plt.plot(audio)
-        plt.axis('off')
-        plt.gca().set_position([0, 0, 1, 1])
-        plt.savefig("fig1.svg")
-
-        # create HTML bokeh page
-        p = figure(title="Basic Title")#, plot_width=300, plot_height=300)
-        p.circle([1, 2], [3, 4])
-        output_file("fig1.html")
-        save(p)
-
+        if self.peaks is None:
+            self.peaks = np.load(f"{deriv_data_path}/peaks.npy")
