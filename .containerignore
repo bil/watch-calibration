@@ -7,8 +7,7 @@
 !README.md
 !watch_calibration/
 !notebooks/
+!scripts/
 
 # TODO remove
 !raw_data
-!data_W241130_W241130.wav
-!output.wav

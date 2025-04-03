@@ -26,7 +26,7 @@ DERIV_DATA_PATH = os.path.join(PWD, "..", os.environ["ARTS_DERIV_DATA_PATH"])
 DEFAULT_AUDIO = os.path.join(RAW_DATA_PATH, "data_W241130_W241130.wav")
 FREQ_GUESS = 6.
 WINDOW_LEN = 6000
-PEAK_PROMINENCE = 0.002
+PEAK_PROMINENCE = 0.001
 F_FUND = 6
 
 class WatchCalibration:
@@ -172,7 +172,7 @@ class WatchCalibration:
 
     def view_correlations(
         self, raw_audio=None, filter=False, shift=False,
-        hilbert=False, envelope=False, plot_wins=False
+        envelope=False, plot_wins=False
     ):
         # TODO do this with derivative data?
         #self.load_deriv_data()
@@ -182,22 +182,17 @@ class WatchCalibration:
         if raw_audio is None:
             raw_audio, _ = self.load_audio()
 
-        if hilbert and envelope:
-            raise ValueError("Set only hilbert or envelope.")
-
         audio = self.trim_audio(raw_audio)
+
         audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
 
-        if shift or hilbert or envelope:
+        if shift or envelope:
             peaks = self.shift_peaks(
-                audio, peaks, hilbert=hilbert, envelope=envelope
+                audio, peaks, envelope=envelope
             )
 
         onset_times = peaks / self.fs
         diffs = np.diff(onset_times)
-
-
-        print(np.mean(diffs))
 
         plt.figure()
         plt.hist(diffs, bins="auto")
@@ -219,7 +214,7 @@ class WatchCalibration:
             for i, peak in enumerate(peaks):
                 win_start = peak - self.window_len//2
                 win_end = peak + self.window_len//2
-                # if shift or hilbert or envelope:
+                # if shift or envelope:
                 #     win_start = peaks[i] - self.window_len//2
                 #     win_end = peaks[i] + self.window_len//2
                 win = audio[win_start:win_end]
@@ -238,10 +233,26 @@ class WatchCalibration:
 
         return fig
 
-    def perform_analysis(self, deriv_data_path=DERIV_DATA_PATH, filter=False):
+    def perform_analysis(self, deriv_data_path=DERIV_DATA_PATH, envelope=False, filter=False, shift=False, output=True):
         self.load_deriv_data()
 
-        onset_times = self.peaks / self.fs
+        raw_audio, _ = self.load_audio()
+        print(raw_audio)
+        print(len(raw_audio))
+
+        audio = self.trim_audio(raw_audio)
+
+        audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
+        print(peaks)
+        if shift or envelope:
+            peaks = self.shift_peaks(
+                audio, peaks, envelope=envelope
+            )
+
+        onset_times = peaks / self.fs
+
+        # remove first and last onset times
+        onset_times = onset_times[1:-1]
         diffs = np.diff(onset_times)
 
         audio_dur = self.audio_len / self.fs
@@ -256,9 +267,8 @@ class WatchCalibration:
 
         drift_per_s = np.mean(diffs) * self.f_fund - 1.
 
-        print(np.mean(diffs))
-        print(onset_times[0] + (np.mean(diffs) * (len(onset_times) - 1)))
-
+        if not output:
+            return drift_per_s
 
         print(f"first tick time: {onset_times[0]:.4f} s")
         print(f"actual last tick time: {actual_last_click_time:.4f}")
@@ -279,6 +289,8 @@ class WatchCalibration:
         self.print_drift_over_time(drift_per_s, SEC_IN_WEEK, "week")
         self.print_drift_over_time(drift_per_s, SEC_IN_MONTH, "month (30 days)")
         self.print_drift_over_time(drift_per_s, SEC_IN_YEAR, "year (365 days)")
+
+        return drift_per_s
 
 
     def generate_figures(self, audio=None):
@@ -348,21 +360,19 @@ class WatchCalibration:
         peaks = sps.find_peaks(
             audio,
             distance=distance,
-            prominence=self.peak_prominence,
+            prominence=.001,#self.peak_prominence,
             wlen=distance
         )[0]
 
         # throw out first and last peaks
-        peaks = peaks[1:-1]
         onset_times = peaks / self.fs
 
         return audio, peaks, onset_times
 
-    def shift_peaks(self, audio, peaks, hilbert=False, envelope=False):
+    def shift_peaks(self, audio, peaks, envelope=False):
         if envelope:
             _, env = self.calculate_envelope(audio)
 
-        shift_amt = 0
         shifted_peaks = copy.copy(peaks)
         for i in range(len(peaks)-1):
             win1_start = peaks[i]-self.window_len//2
@@ -371,7 +381,7 @@ class WatchCalibration:
             win1_end = peaks[i]+self.window_len//2 + 1
             if win1_end > len(audio):
                 win1_end = len(audio)
-            win1 = audio[win1_start:win1_end]
+            win1 = self._normalize(audio[win1_start:win1_end])
 
             win2_start = peaks[i+1]-self.window_len//2
             if win2_start < 0:
@@ -379,17 +389,13 @@ class WatchCalibration:
             win2_end = peaks[i+1]+self.window_len//2
             if win2_end > len(audio):
                 win2_end = len(audio)
-            win2 = audio[win2_start:win2_end]
-
-            if hilbert:
-                win1 = sps.hilbert(win1)
-                win1 = sps.hilbert(win2)
+            win2 = self._normalize(audio[win2_start:win2_end])
 
             if envelope:
-                win1 = env[win1_start:win1_end]
-                win2 = env[win2_start:win2_end]
+                win1 = self._normalize(env[win1_start:win1_end])
+                win2 = self._normalize(env[win2_start:win2_end])
 
-            shift_amt += self._corr_wins(win1, win2)
+            shift_amt = self._corr_wins(win1, win2)
             if i+1 < len(shifted_peaks):
                 shifted_peaks[i+1] -= shift_amt
 

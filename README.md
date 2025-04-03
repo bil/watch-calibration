@@ -32,7 +32,14 @@ To run jupyter notebook in the container and open up a jupyter notebook on your 
 
 Then navigate to the link starting with http://localhost:8888/tree?token=<token> displayed in your terminal.
 
-### ipython Kernel
+To stop the server, the following can be run in another terminal:
+
+```bash
+ENGINE=podman
+$ENGINE stop watch-calibration-jupyter
+```
+
+### IPython Kernel
 
 And to run an ipython kernel in the container, run:
 
@@ -48,6 +55,22 @@ wc.load_audio("raw_data/data_W241130_W241130.wav")
 wc.generate_figures()
 ... TODO perform analysis command
 ```
+
+
+### Container Image
+
+To save the container image as a tar achive, the run script can be run with the save-image argument:
+
+```bash
+./run.sh -s
+```
+
+And to load the image back, run:
+
+```bash
+./run.sh -l
+```
+
 
 ## Local Usage (without a container)
 

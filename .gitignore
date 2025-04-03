@@ -2,6 +2,13 @@
 raw_data/
 deriv_data/
 
+# trusted timestamping files
+*.sha*
+*.digest
+tsRe*.ts*
+tsCRL*.crl
+tsVerify.json
+
 # allow experiment environment file, but not other .env files
 *.env
 !config.env

@@ -1,83 +1,113 @@
-# Containers
+#!/bin/bash
 
-source "$(dirname $0 )/config.env"
+# provides various entry points into the watch-calibration experiment
+# positional arguments:
+#   {g,j,i,c,s},<image>
+#   {generate-figures,jupyter,ipython,collect-data,save-image},<image>
+# regenerate figures from data: ./run.sh g
+# regenerate figures using container image: ./run.sh g watch-calibration.tar
 
-ENGINE=podman
-CF="$(dirname $0)/watch-calibration.cf"
-IF="$(dirname $0)/.containerignore"
+# ARTS open framework config file
 ENV_FILE="$(dirname $0)/config.env"
 
+# load environment variables
+source $ENV_FILE
+
+ENGINE=podman # also tested with docker
+# Containerfile
+CF="$(dirname $0)/watch-calibration.cf"
+if [[ $ENGINE -eq docker ]]; then
+# Ignorefile (must be named .dockerignore for Docker)
+  IF="$(dirname $0)/.dockerignore"
+  CMD_IF=""
+else
+  IF="$(dirname $0)/.containerignore"
+  CMD_IF="--ignorefile $IF"
+fi
+
+# positional argument variables
 GENERATE_FIGURES=0
 LAUNCH_JUPYTER=0
 LAUNCH_IPYTHON=0
 COLLECT_DATA=0
-EXPORT_IMAGE=0
+SAVE_IMAGE=0
 
+# select function based off input argument
+# defaults to generate-figures
 case $1 in
-  -g|--generate-figures)
+  ""|g|generate-figures)
     GENERATE_FIGURES=1
-    shift
     ;;
-  -j|--jupyter)
+  j|jupyter)
     LAUNCH_JUPYTER=1
-    shift
     ;;
-  -i|--ipython)
+  i|ipython)
     LAUNCH_IPYTHON=1
-    shift
     ;;
-  -c|--collect-data)
+  c|collect-data)
     COLLECT_DATA=1
-    shift
     ;;
-  -e|--export-image)
-    EXPORT_IMAGE=1
-    shift
+  s|save-image)
+    SAVE_IMAGE=1
     ;;
-  -*|--*)
+  *)
     echo "Unknown option $1"
     exit 1
     ;;
 esac
 
-# TODO load image by default if present; build if flag specified
-
-# $ENGINE build -f $CF -t watch-calibration .
-$ENGINE build -f $CF --ignorefile $IF -t watch-calibration .
+# load container image if supplied; otherwise build locally
+if [[ -n $2 ]]; then
+  $ENGINE load -i $2
+else
+  $ENGINE build -f $CF $CMD_IF -t watch-calibration .
+fi
 
 # generate figures
 if [[ $GENERATE_FIGURES -eq 1 ]]; then
-    $ENGINE run --rm  -it         \
-      --name watch-calibration-figures  \
-      --env-file $ENV_FILE      \
-      -v $(dirname $0)/$ARTS_RAW_DATA_PATH:/usr/src/exp/$ARTS_RAW_DATA_PATH   \
-      -v $(dirname $0)/$ARTS_OUTPUT_PATH:/figs   \
-      watch-calibration         \
-      bash -c "python -c 'from watch_calibration import WatchCalibration; wc = WatchCalibration(); wc.generate_figures()' ; cp /usr/src/exp/fig1.svg /usr/src/exp/fig1.html /figs"
+  $ENGINE run --rm  -it                           \
+    --name watch-calibration-figures              \
+    --env-file $ENV_FILE                          \
+    -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data  \
+    -v $ARTS_OUTPUT_PATH:/usr/src/exp/output      \
+    watch-calibration                             \
+    bash -c scripts/generate_figures.sh
 fi
 
+# launch jupyter server
 if [[ $LAUNCH_JUPYTER -eq 1 ]]; then
-    $ENGINE run --rm -it        \
-      --name watch-calibration-jupyter  \
-      --env-file $ENV_FILE      \
-      -p 8888:8888              \
-      watch-calibration         \
-      jupyter notebook --config /usr/src/exp/notebooks/jupyter_notebook_config.py --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+  $ENGINE run --rm -i                 \
+    --name watch-calibration-jupyter  \
+    --env-file $ENV_FILE              \
+    -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data  \
+    -v $ARTS_OUTPUT_PATH:/usr/src/exp/output   \
+    -p 8888:8888                      \
+    watch-calibration                 \
+    bash -c scripts/launch_jupyter.sh
 fi
 
+# launch ipython kernel
 if [[ $LAUNCH_IPYTHON -eq 1 ]]; then
-    $ENGINE run --rm -it     \
-      --name watch-calibration-ipython \
-      --env-file $ENV_FILE     \
-      -v $(pwd):/figs          \
-      watch-calibration        \
-      ipython -c "%run watch_calibration/watch_calibration.py"
+  $ENGINE run --rm -it                \
+    --name watch-calibration-ipython  \
+    --env-file $ENV_FILE              \
+    -v $ARTS_OUTPUT_PATH:/figs                   \
+    watch-calibration                 \
+    bash -c scripts/launch_ipython.sh
 fi
 
+# collect raw data
 if [[ $COLLECT_DATA -eq 1 ]]; then
-    $ENGINE run --rm -v $(pwd):/usr/src/exp -it watch-calibration wc-collect-data $@
+  # collect data with watch-calibration package
+  $ENGINE run --rm -it                \
+    --name watch-calibration-ingest   \
+    --env-file $ENV_FILE              \
+    -v $(pwd):/usr/src/exp            \
+    watch-calibration                 \
+    bash -c scripts/collect_data.sh
 fi
 
-if [[ $EXPORT_IMAGE -eq 1 ]]; then
-    $ENGINE save -o watch-calibration.tar watch-calibration
+# save container image to file
+if [[ $SAVE_IMAGE -eq 1 ]]; then
+  $ENGINE save -o watch-calibration.tar watch-calibration
 fi
