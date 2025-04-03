@@ -20,14 +20,24 @@ try:
 except:
     SND_DEFINED = False
 
-PWD = os.path.realpath(os.path.dirname(__file__))
-RAW_DATA_PATH = os.path.join(PWD, "..", os.environ["ARTS_RAW_DATA_PATH"])
-DERIV_DATA_PATH = os.path.join(PWD, "..", os.environ["ARTS_DERIV_DATA_PATH"])
+# default working directory to the watch-calibration top-level directory
+WC_DIR = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
+
+# use absolute paths if set or create absolute path from parent directory
+if os.path.isabs(os.environ["ARTS_RAW_DATA_PATH"]):
+    RAW_DATA_PATH = os.environ["ARTS_RAW_DATA_PATH"]
+else:
+    RAW_DATA_PATH = os.path.join(WC_DIR, os.environ["ARTS_RAW_DATA_PATH"])
+
+if os.path.isabs(os.environ["ARTS_DERIV_DATA_PATH"]):
+    DERIV_DATA_PATH = os.environ["ARTS_DERIV_DATA_PATH"]
+else:
+    DERIV_DATA_PATH = os.path.join(WC_DIR, os.environ["ARTS_DERIV_DATA_PATH"])
 DEFAULT_AUDIO = os.path.join(RAW_DATA_PATH, "data_W241130_W241130.wav")
-FREQ_GUESS = 6.
-WINDOW_LEN = 6000
-PEAK_PROMINENCE = 0.001
-F_FUND = 6
+# grab experiment
+WINDOW_LEN = int(os.environ.get("WC_WINDOW_LEN") or 1000)
+PEAK_PROMINENCE = float(os.environ.get("WC_PEAK_PROMINENCE") or 0.001)
+F_FUND = float(os.environ.get("WC_F_FUND") or 6.)
 
 class WatchCalibration:
     """ WatchCalibration class  """
@@ -41,7 +51,6 @@ class WatchCalibration:
             self.audio_file = DEFAULT_AUDIO
         else:
             self.audio_file = audio_file
-        self.freq_quess = FREQ_GUESS
         self.window_len = WINDOW_LEN
         self.peak_prominence = PEAK_PROMINENCE
         self.f_fund = F_FUND
@@ -69,7 +78,6 @@ class WatchCalibration:
     def save_audio_to_file(
         self, duration, outfile="output.wav", input_device=None, generate=False
     ):
-        print(input_device)
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
             return
@@ -77,7 +85,7 @@ class WatchCalibration:
         if generate:
             # generate with librosa
             recording = librosa.clicks(
-                times=np.arange(duration, step=1./FREQ_GUESS),
+                times=np.arange(duration, step=1./self.f_fund),
                 sr=self.fs, length=self.fs*duration, click_duration=0.01
             )
         else:
@@ -332,7 +340,7 @@ class WatchCalibration:
 
     def trim_audio(self, audio):
         # throw out first and last ticks
-        win_size = int(self.fs/self.freq_quess)
+        win_size = int(self.fs/self.f_fund)
         return audio[win_size:-win_size]
 
     def filter_audio(self, audio, freq_band=None):
@@ -352,7 +360,7 @@ class WatchCalibration:
         return filtered, z_env
 
     def find_peaks(self, audio, filter=False):
-        distance = int(self.fs/self.freq_quess*.9)
+        distance = int(self.fs/self.f_fund*.9)
 
         if filter:
             audio = self.filter_audio(audio)

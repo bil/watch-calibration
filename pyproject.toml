@@ -13,7 +13,8 @@ maintainers = [
 ]
 description = "Basic example implemeting SHREW."
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "GPL-3.0"
+license-files = ["LICENSE"]
 keywords = ["reproducibility", "replicability"]
 classifiers = [
   "Programming Language :: Python"

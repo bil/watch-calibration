@@ -13,7 +13,7 @@ ENV_FILE="$(dirname $0)/config.env"
 # load environment variables
 source $ENV_FILE
 
-ENGINE=podman # also tested with docker
+ENGINE=docker # also tested with docker
 # Containerfile
 CF="$(dirname $0)/watch-calibration.cf"
 if [[ $ENGINE -eq docker ]]; then
@@ -63,47 +63,50 @@ else
   $ENGINE build -f $CF $CMD_IF -t watch-calibration .
 fi
 
+CONTAINER_RUN_ARGS="
+    --rm -it
+    --env-file $ENV_FILE
+    -v $ARTS_CODE_PATH:/usr/src/exp/watch_calibration
+    -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data
+    -v $ARTS_DERIV_DATA_PATH:/usr/src/exp/deriv_data
+    -v $ARTS_OUTPUT_PATH:/usr/src/exp/output
+    watch-calibration
+"
+
 # generate figures
 if [[ $GENERATE_FIGURES -eq 1 ]]; then
-  $ENGINE run --rm  -it                           \
-    --name watch-calibration-figures              \
-    --env-file $ENV_FILE                          \
-    -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data  \
-    -v $ARTS_OUTPUT_PATH:/usr/src/exp/output      \
-    watch-calibration                             \
+    $ENGINE run                            \
+    --name watch-calibration-figures       \
+    $CONTAINER_RUN_ARGS                    \
     bash -c scripts/generate_figures.sh
 fi
 
 # launch jupyter server
 if [[ $LAUNCH_JUPYTER -eq 1 ]]; then
-  $ENGINE run --rm -i                 \
-    --name watch-calibration-jupyter  \
-    --env-file $ENV_FILE              \
-    -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data  \
-    -v $ARTS_OUTPUT_PATH:/usr/src/exp/output   \
-    -p 8888:8888                      \
-    watch-calibration                 \
+  $ENGINE run --rm -i                      \
+    --name watch-calibration-jupyter       \
+    -v ./notebooks:/usr/src/exp/notebooks  \
+    -p 8888:8888                           \
+    $CONTAINER_RUN_ARGS                    \
     bash -c scripts/launch_jupyter.sh
 fi
 
 # launch ipython kernel
 if [[ $LAUNCH_IPYTHON -eq 1 ]]; then
-  $ENGINE run --rm -it                \
-    --name watch-calibration-ipython  \
-    --env-file $ENV_FILE              \
-    -v $ARTS_OUTPUT_PATH:/figs                   \
-    watch-calibration                 \
+  $ENGINE run --rm -it                    \
+    --name watch-calibration-ipython      \
+    $CONTAINER_RUN_ARGS                   \
     bash -c scripts/launch_ipython.sh
 fi
 
-# collect raw data
+# collect raw data using watch-calibration package
 if [[ $COLLECT_DATA -eq 1 ]]; then
-  # collect data with watch-calibration package
-  $ENGINE run --rm -it                \
-    --name watch-calibration-ingest   \
-    --env-file $ENV_FILE              \
-    -v $(pwd):/usr/src/exp            \
-    watch-calibration                 \
+  $ENGINE run --rm -it                                \
+    --name watch-calibration-ingest                   \
+    --env-file $ENV_FILE                              \
+    -v $ARTS_CODE_PATH:/usr/src/exp/watch_calibration \
+    -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data      \
+    watch-calibration                                 \
     bash -c scripts/collect_data.sh
 fi
 
