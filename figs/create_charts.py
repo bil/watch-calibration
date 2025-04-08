@@ -97,7 +97,7 @@ def create_ascii_file_chart(
     # Save Image
     im.save(outfile, "png")
 
-create_ascii_file_chart()
+# create_ascii_file_chart()
 create_ascii_file_chart(
     filepath=f"{dir_path}/arts-minimal-file-structure",
     outfile=f"{dir_path}/file_structure_minimal.svg",
