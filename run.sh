@@ -13,7 +13,7 @@ ENV_FILE="$(dirname $0)/config.env"
 # load environment variables
 source $ENV_FILE
 
-ENGINE=docker # also tested with docker
+ENGINE=podman # also tested with docker
 # Containerfile
 CF="$(dirname $0)/watch-calibration.cf"
 if [[ $ENGINE -eq docker ]]; then
@@ -69,7 +69,7 @@ CONTAINER_RUN_ARGS="
     -v $ARTS_CODE_PATH:/usr/src/exp/watch_calibration
     -v $ARTS_RAW_DATA_PATH:/usr/src/exp/raw_data
     -v $ARTS_DERIV_DATA_PATH:/usr/src/exp/deriv_data
-    -v $ARTS_OUTPUT_PATH:/usr/src/exp/output
+    -v $ARTS_OUTPUT_PATH:/usr/src/exp/figures
     watch-calibration
 "
 

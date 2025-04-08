@@ -2,6 +2,7 @@
 import copy
 import csv
 import os
+import yaml
 
 from bokeh.plotting import figure, output_file, save
 import librosa
@@ -14,43 +15,51 @@ from scipy import signal as sps
 import soundfile as sf
 from scipy.io.wavfile import write
 
+from .util import make_abs_path
+
 try:
     import sounddevice as sd
     SND_DEFINED = True
 except:
     SND_DEFINED = False
 
+
 # default working directory to the watch-calibration top-level directory
 WC_DIR = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
-
 # use absolute paths if set or create absolute path from parent directory
-if os.path.isabs(os.environ["ARTS_RAW_DATA_PATH"]):
-    RAW_DATA_PATH = os.environ["ARTS_RAW_DATA_PATH"]
-else:
-    RAW_DATA_PATH = os.path.join(WC_DIR, os.environ["ARTS_RAW_DATA_PATH"])
-
-if os.path.isabs(os.environ["ARTS_DERIV_DATA_PATH"]):
-    DERIV_DATA_PATH = os.environ["ARTS_DERIV_DATA_PATH"]
-else:
-    DERIV_DATA_PATH = os.path.join(WC_DIR, os.environ["ARTS_DERIV_DATA_PATH"])
-DEFAULT_AUDIO = os.path.join(RAW_DATA_PATH, "data_W241130_W241130.wav")
-# grab experiment
-WINDOW_LEN = int(os.environ.get("WC_WINDOW_LEN") or 1000)
+RAW_DATA_PATH = make_abs_path(WC_DIR, os.environ["ARTS_RAW_DATA_PATH"])
+DERIV_DATA_PATH = make_abs_path(WC_DIR, os.environ["ARTS_DERIV_DATA_PATH"])
+OUTPUT_PATH = make_abs_path(WC_DIR, os.environ["ARTS_OUTPUT_PATH"])
+DEFAULT_DATA_NAME = "W241130"
+DEFAULT_AUDIO = os.path.join(
+    RAW_DATA_PATH, f"{DEFAULT_DATA_NAME}/{DEFAULT_DATA_NAME}.wav"
+)
+FREQ_BAND_MAX = 15000
+FILT_PROM_DIV = 70
+# load experiment environment variables
+WINDOW_LEN = int(os.environ.get("WC_WINDOW_LEN") or 2000)
 PEAK_PROMINENCE = float(os.environ.get("WC_PEAK_PROMINENCE") or 0.001)
 F_FUND = float(os.environ.get("WC_F_FUND") or 6.)
+
 
 class WatchCalibration:
     """ WatchCalibration class  """
 
-    def __init__(self, fs=44100, audio_file=None):
+    def __init__(self, data_name=None, fs=None):
         """ Initialize WatchCalibration. """
 
         # constants
-        self.fs = fs
-        if audio_file is None:
+        if data_name is None:
+            self.data_name = DEFAULT_DATA_NAME
             self.audio_file = DEFAULT_AUDIO
+            self.metadata =  self.load_metadata(DEFAULT_DATA_NAME)
         else:
-            self.audio_file = audio_file
+            self.data_name = data_name
+            self.audio_file = os.path.join(
+                RAW_DATA_PATH, f"{data_name}/{data_name}.wav"
+            )
+            self.metadata = self.load_metadata(data_name)
+        self.fs = fs or self.metadata.get("sampling_rate")
         self.window_len = WINDOW_LEN
         self.peak_prominence = PEAK_PROMINENCE
         self.f_fund = F_FUND
@@ -67,7 +76,7 @@ class WatchCalibration:
     ## Class Functions ########################################################
 
     @classmethod
-    def query_devices(self):
+    def query_devices(cls):
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
             return
@@ -75,8 +84,20 @@ class WatchCalibration:
         print(sd.query_devices())
 
 
+    @classmethod
+    def load_metadata(cls, data_name):
+        metadata_file = os.path.join(
+            RAW_DATA_PATH, f"{data_name}/{data_name}.yaml"
+        )
+        with open(metadata_file, "r") as f:
+            metadata = yaml.safe_load(f.read())
+
+        return metadata
+
+
     def save_audio_to_file(
-        self, duration, outfile="output.wav", input_device=None, generate=False
+        self, duration,
+        outdir=".", outfile="output.wav", input_device=None, generate=False
     ):
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
@@ -90,10 +111,14 @@ class WatchCalibration:
             )
         else:
             # record from audio interface
-            recording = sd.rec(int(duration * self.fs), samplerate=self.fs, channels=1, device=input_device)
+            recording = sd.rec(
+                int(duration * self.fs),
+                samplerate=self.fs, channels=1, device=input_device
+            )
+            sd.wait()
 
-        sd.wait()  # Wait until recording is finished
-        write(outfile, self.fs, recording)  # Save as WAV file
+        # write audio to file
+        write(os.path.join(outdir, outfile), self.fs, recording)
 
 
     def play_audio(self, filename, output_device=sd.default.device):
@@ -241,17 +266,22 @@ class WatchCalibration:
 
         return fig
 
-    def perform_analysis(self, deriv_data_path=DERIV_DATA_PATH, envelope=False, filter=False, shift=False, output=True):
-        self.load_deriv_data()
+    def perform_analysis(
+        self, deriv_data_path=DERIV_DATA_PATH,
+        envelope=False, filter=False, shift=False, output=True
+    ):
+
+        # TODO just use this and not raw audio
+        # self.create_deriv_from_raw(raw_audio, filter=filter)
+        # self.load_deriv_data()
 
         raw_audio, _ = self.load_audio()
-        print(raw_audio)
-        print(len(raw_audio))
 
         audio = self.trim_audio(raw_audio)
 
+
         audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
-        print(peaks)
+
         if shift or envelope:
             peaks = self.shift_peaks(
                 audio, peaks, envelope=envelope
@@ -263,15 +293,12 @@ class WatchCalibration:
         onset_times = onset_times[1:-1]
         diffs = np.diff(onset_times)
 
-        audio_dur = self.audio_len / self.fs
+        audio_dur = len(audio) / self.fs
 
         actual_last_click_time = onset_times[-1]
         ideal_last_click_time = (
             onset_times[0] + (len(onset_times) - 1) * 1./self.f_fund
         )
-
-        drift = ideal_last_click_time - actual_last_click_time
-        drift_per_s = drift / audio_dur
 
         drift_per_s = np.mean(diffs) * self.f_fund - 1.
 
@@ -301,7 +328,7 @@ class WatchCalibration:
         return drift_per_s
 
 
-    def generate_figures(self, audio=None):
+    def generate_figures(self, audio=None, output_path=OUTPUT_PATH):
         if audio is None:
             audio, _ = self.load_audio()
 
@@ -311,12 +338,14 @@ class WatchCalibration:
         plt.plot(audio)
         plt.axis('off')
         plt.gca().set_position([0, 0, 1, 1])
-        plt.savefig("fig1.svg")
+        # plt.savefig(f"{output_path}/fig1.svg")
+        plt.savefig("../fig1.svg")
 
         # create HTML bokeh page
         p = figure(title="Basic Title")#, plot_width=300, plot_height=300)
         p.circle([1, 2], [3, 4])
-        output_file("fig1.html")
+        # output_file(f"{output_path}/fig1.html")
+        output_file("../fig1.html")
         save(p)
 
 
@@ -336,20 +365,26 @@ class WatchCalibration:
             A, height=np.mean(A)*8, distance=self.fs//400
         )[0]
         self.freq_band = (peaks[0], peaks[-1])
+        if self.freq_band[1] > FREQ_BAND_MAX:
+            self.freq_band = (peaks[0], FREQ_BAND_MAX)
         return A, peaks
 
-    def trim_audio(self, audio):
+    def trim_audio(self, audio, start=None, end=None):
         # throw out first and last ticks
         win_size = int(self.fs/self.f_fund)
-        return audio[win_size:-win_size]
+        if not start:
+            start = win_size
+        if not end:
+            end = -win_size
+        return audio[start:end]
 
-    def filter_audio(self, audio, freq_band=None):
+    def filter_audio(self, audio, freq_band=None, order=6):
         if freq_band is None:
             if self.freq_band is None:
                 _, peaks = self.calculate_freq_band(audio)
             freq_band = self.freq_band
 
-        b, a = sps.butter(6, freq_band, btype="bandpass", fs = self.fs)
+        b, a = sps.butter(order, freq_band, btype="bandpass", fs = self.fs)
 
         return sps.filtfilt(b, a, audio)
 
@@ -365,12 +400,17 @@ class WatchCalibration:
         if filter:
             audio = self.filter_audio(audio)
 
+        prominence = self.peak_prominence
+        if filter:
+            prominence = self.peak_prominence / FILT_PROM_DIV
+
         peaks = sps.find_peaks(
             audio,
             distance=distance,
-            prominence=.001,#self.peak_prominence,
+            prominence=prominence,
             wlen=distance
         )[0]
+        # plt.plot(peaks, audio[peaks], "x")
 
         # throw out first and last peaks
         onset_times = peaks / self.fs

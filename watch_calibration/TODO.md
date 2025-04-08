@@ -1,11 +1,6 @@
-Experiment Steps:
-  - compare hilbert and envelope in analysis
-  - main metric should be standard deviation of ticks
-
-
-Alpine container:
- - https://gist.github.com/orenitamar/f29fb15db3b0d13178c1c4dd611adce2?permalink_comment_id=2771812
- - https://stackoverflow.com/questions/65569248/how-to-install-matplotlib-on-alpine
+include paper here
+show how to verify figure checksums in paper
+run data collection script on basement recordings
 
 Internet Archive:
   - Come up with a good solution for automating IA access and post here:
@@ -13,6 +8,6 @@ Internet Archive:
 
 
 ARTS:
- - use env file
- - data collection docker command
+ - data collection docker command (test on linux, make work on mac)
  - document and comment code
+ - one click reproduction in browser w/ binder

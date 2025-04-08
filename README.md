@@ -1,6 +1,19 @@
 # watch-calibration
 
-This simple watch calibration experiment showcases how an experiment workflow might be designed to be compatible with the ARTS open framework. It includes raw audio data of a watch movement ticking and is written as a Python package. This serves as a very comprehensive example which implements most aspects of the ARTS open framework, but components of this example may be used for simpler workflows.
+This simple watch calibration experiment showcases how an experiment workflow might be designed to be compatible with the ARTS open framework. It includes raw audio data of a watch movement ticking and is written as a Python package with accompanying helper scripts that can be run in a container.
+
+The following ARTS open framework features are implemented:
+
+- config.env file
+- open-source license
+- usage documentation for experiment workflow
+- persistent storage in compatible archive
+- code tracking ia trusted-timestamped git repository
+- data tracking via manual trusted timestamping
+- containerized environment exposing figure generation code, development environment, interactive plots, and data collection pipeline
+- container image
+
+This comprehensive set of features may be pared down to fit the needs of the research output. For example, a dataset being released under the ARTS open framework might exclude analysis code, a git repository, and scripts unrelated to data collection.
 
 The experiment is most easily followed using the included jupyter notebook which may be run with or without a container.
 
@@ -8,19 +21,34 @@ The experiment is most easily followed using the included jupyter notebook which
 
 All container functionality is made available using the `./run.sh` script. The default functionality is to generate plots and other functionality is made available through passing command line arguments.
 
+### Setup
+
+Make sure you have an OCI-compatible container engine installed. This example has been tested with both Podman (5.1.1) and Docker (4.37.2).
+
+Installation instructions for both engines can be found here:
+
+- [Podman](https://podman.io/docs/installation)
+- [Docker](https://docs.docker.com/engine/install/).
+
 ### Configuration
 
-Modify config.env
+Modify config.env as needed. The default values allow you to reproduce the experiment as initially run, but if you'd like to try the experiment on your own data, you can specify a different path for `ARTS_RAW_DATA_PATH` or move your data to the path specified and update the code instead.
 
 ### Generate Figures
 
-```bash
-./run.sh
-```
+Figures relating to the watch-calibration experiemnt included in the ARTS open framework paper (DOI?) can be recreated.
+
+The following three commands are equivalent:
+
 
 ```bash
+./run.sh
 ./run.sh g
+./run.sh generate_figures
 ```
+
+TODO verify checksum of figure from paper?
+
 
 ### Jupyter Notebook
 
@@ -33,7 +61,7 @@ To run jupyter notebook in the container and open up a jupyter notebook on your 
 Then navigate to http://localhost:8888 in your browser. If you are running the paackage on a remote machine over SSH and would like to view the notebook on your local browser, you will need to run the SSH command using tunneling as follows:
 
 ```bash
-ssh <remote-machine> -L 8888:localhost:8888
+ssh <remote> -L 8888:localhost:8888
 ```
 
 To stop the server, the following can be run in another terminal:

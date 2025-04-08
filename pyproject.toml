@@ -26,6 +26,7 @@ Documentation = "https://bil.stanford.edu"
 Repository = "https://github.com/bil/watch-calibration"
 
 [project.scripts]
+wc-query-devices = "watch_calibration.collect_data:query_devices"
 wc-collect-data = "watch_calibration.collect_data:collect_data"
 
 [tool.setuptools]
