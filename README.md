@@ -36,7 +36,7 @@ Modify config.env as needed. The default values allow you to reproduce the exper
 
 ### Generate Figures
 
-Figures relating to the watch-calibration experiemnt included in the ARTS open framework paper (DOI?) can be recreated.
+Figures relating to the watch-calibration experiemnt included in the ARTS open framework paper can be recreated.
 
 The following three commands are equivalent:
 
@@ -135,10 +135,3 @@ podman machine init --cpus 7 -m 4096
 podman machine start
 ./run.sh -s
 ```
-
-
-## Publish Package
-
-Get S3-like credentials from: https://archive.org/account/s3.php
-
-TODO

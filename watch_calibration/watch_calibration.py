@@ -176,7 +176,6 @@ class WatchCalibration:
         status = sd.wait()  # Wait until file is done playing
 
 
-    # TODO change filename to archive loc and support s3 pulls?
     def load_audio(self, filename=None):
         if filename is None:
             filename = self.audio_file
@@ -271,7 +270,7 @@ class WatchCalibration:
     ):
 
         audio, peaks, peak_times, diffs = _get_anaylsis_vars(
-            raw_audio=raw_audio
+            raw_audio=raw_audio, filter=filter, shift=shift, envelope=envelope
         )
 
         fig = plt.figure()
@@ -317,7 +316,7 @@ class WatchCalibration:
     ):
 
         audio, peaks, peak_times, diffs = self._get_anaylsis_vars(
-            raw_audio=raw_audio
+            raw_audio=None, filter=filter, shift=shift, envelope=envelope
         )
 
         audio_dur = len(audio) / self.fs
@@ -356,7 +355,9 @@ class WatchCalibration:
 
     ## Class Utilities ########################################################
 
-    def _get_anaylsis_vars(self, raw_audio=None):
+    def _get_anaylsis_vars(
+        self, raw_audio=None, filter=False, shift=False, envelope=False
+    ):
         # TODO use only derivative data
         # self.create_deriv_from_raw(raw_audio, filter=filter)
         # self.load_deriv_data()

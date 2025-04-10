@@ -12,7 +12,7 @@ from bokeh.plotting import figure, output_file, save
 from jinja2 import Environment, PackageLoader, select_autoescape
 from matplotlib import pyplot as plt
 
-from .watch_calibration import OUTPUT_PATH
+from .watch_calibration import WatchCalibration, OUTPUT_PATH
 
 jinja_env = Environment(
     loader=PackageLoader("watch_calibration", "."),
@@ -277,3 +277,26 @@ def generate_figures(wcs, drift_rows):
         save(final_layout)
 
         return f"{out_file}.svg"
+
+
+def generate_figures_main():
+    DATA_NAMES = [
+        "W241130",
+        "250227",
+        "250409",
+        "250410_noisy"
+    ]
+    wcs = {}
+    for name in DATA_NAMES:
+        wcs[name] =  WatchCalibration(name)
+    num_params = 3
+    drift_rows = [[] for i in range(len(DATA_NAMES))]
+    for i, (name, w) in enumerate(wcs.items()):
+        for j in range(2**num_params):
+            filter = j%2
+            envelope = (j>>1)%2
+            shift = (j>>2)%2
+            drift_per_s = w.perform_analysis(filter=filter, envelope=envelope, shift=shift, output=False)
+            drift_per_day = drift_per_s * 60 * 60 * 24
+            drift_rows[i].append(((bool(filter), bool(envelope), bool(shift), drift_per_day)))
+    generate_figures(wcs, drift_rows)
