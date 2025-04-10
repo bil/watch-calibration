@@ -6,11 +6,7 @@ TTS_PATH="$(dirname $0)/../tts"
 TTS_REPO=https://github.com/bil/timestamping
 DATA_NAME=$1
 DATA_PATH=$2
-if [[ "$DIR" = /* ]]; then
-  RAW_DATA_DIR=$ARTS_RAW_DATA_PATH
-else
-  RAW_DATA_DIR="../$ARTS_RAW_DATA_PATH"
-fi
+COPY_DIR=$3
 PATH=$PATH:timestamping/trustedtimestamping/usr/local/bin
 
 mkdir -p $TTS_PATH
@@ -44,7 +40,7 @@ printf "Verification complete\n\n"
 
 echo "Building timestamps JSON..."
 ttsPackJSON
-mv timestamps.json $RAW_DATA_DIR/timestamps_$DATA_NAME.json
+mv timestamps.json $COPY_DIR/timestamps_$DATA_NAME.json
 printf "Timestamps JSON built\n\n"
 
 echo "Deleting checksum and all timestamp reply and CRL files..."
@@ -61,3 +57,5 @@ printf "Unpacked\n\n"
 echo "Verifying unpacked files..."
 ttsVerify $DATA_PATH
 printf "Verification complete\n"
+
+popd

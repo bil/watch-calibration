@@ -20,6 +20,9 @@ tsVerify.json
 # audio data files
 *.wav
 
+# deposition
+watch_calibration.git/
+
 # archive.org CLI
 ia
 

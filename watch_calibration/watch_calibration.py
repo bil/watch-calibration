@@ -241,45 +241,38 @@ class WatchCalibration:
 
 
     def save_deriv_data(
-        self, deriv_data_path=DERIV_DATA_PATH
+        self, deriv_data_path=DERIV_DATA_PATH,
     ):
         # save audio windows and onset times to file
-
         if self.audio_wins is None or self.peaks is None:
             raise ValueError("Run create_deriv_from_raw function first")
 
         # save derivative data
-        np.save(f"{deriv_data_path}/audio_len.npy", self.audio_len)
-        np.save(f"{deriv_data_path}/audio.npy", self.audio_wins)
-        np.save(f"{deriv_data_path}/peaks.npy", self.peaks)
+        os.makedirs(
+            os.path.join(deriv_data_path, self.data_name), exist_ok=True
+        )
+        np.save(
+            os.path.join(deriv_data_path, self.data_name, "audio_len.npy"),
+            self.audio_len
+        )
+        np.save(
+            os.path.join(deriv_data_path, self.data_name, "audio.npy"),
+            self.audio_wins
+        )
+        np.save(
+            os.path.join(deriv_data_path, self.data_name, "peaks.npy"),
+            self.peaks
+        )
 
 
     def view_correlations(
         self, raw_audio=None, filter=False, shift=False,
         envelope=False, plot_wins=False
     ):
-        # TODO do this with derivative data?
-        #self.load_deriv_data()
-        # peak_times = self.peaks / self.fs
-        # diffs = np.diff(peak_times)
 
-        if raw_audio is None:
-            raw_audio, _ = self.load_audio()
-
-        audio = self.trim_audio(raw_audio)
-
-        audio, peaks, peak_times = self.find_peaks(audio, filter=filter)
-
-        if shift or envelope:
-            peaks = self.shift_peaks(
-                audio, peaks, envelope=envelope
-            )
-
-
-        # remove first and last peaks
-        peaks = peaks[1:-1]
-        peak_times = peaks / self.fs
-        diffs = np.diff(peak_times)
+        audio, peaks, peak_times, diffs = _get_anaylsis_vars(
+            raw_audio=raw_audio
+        )
 
         fig = plt.figure()
         fig.canvas.header_visible = False
@@ -323,26 +316,9 @@ class WatchCalibration:
         envelope=False, filter=False, shift=False, output=True
     ):
 
-        # TODO just use this and not raw audio
-        # self.create_deriv_from_raw(raw_audio, filter=filter)
-        # self.load_deriv_data()
-
-        raw_audio, _ = self.load_audio()
-
-        audio = self.trim_audio(raw_audio)
-
-
-        audio, peaks, peak_times = self.find_peaks(audio, filter=filter)
-
-        if shift or envelope:
-            peaks = self.shift_peaks(
-                audio, peaks, envelope=envelope
-            )
-
-        # remove first and last peaks
-        peaks = peaks[1:-1]
-        peak_times = peaks / self.fs
-        diffs = np.diff(peak_times)
+        audio, peaks, peak_times, diffs = self._get_anaylsis_vars(
+            raw_audio=raw_audio
+        )
 
         audio_dur = len(audio) / self.fs
 
@@ -379,6 +355,30 @@ class WatchCalibration:
 
 
     ## Class Utilities ########################################################
+
+    def _get_anaylsis_vars(self, raw_audio=None):
+        # TODO use only derivative data
+        # self.create_deriv_from_raw(raw_audio, filter=filter)
+        # self.load_deriv_data()
+
+        if raw_audio is None:
+            raw_audio, _ = self.load_audio()
+
+        audio = self.trim_audio(raw_audio)
+
+        audio, peaks, peak_times = self.find_peaks(audio, filter=filter)
+
+        if shift or envelope:
+            peaks = self.shift_peaks(
+                audio, peaks, envelope=envelope
+            )
+
+        # remove first and last peaks
+        peaks = peaks[1:-1]
+        peak_times = peaks / self.fs
+        diffs = np.diff(peak_times)
+
+        return audio, peaks, peak_times, diffs
 
     def _normalize(self, x):
         return (x - np.mean(x)) / np.max(x)
