@@ -1,4 +1,5 @@
 import argparse
+import errno
 import os
 import sys
 import time
@@ -11,16 +12,6 @@ RAW_DATA_PATH = make_abs_path(
     WC_DIR, os.environ.get("ARTS_RAW_DATA_PATH") or "."
 )
 METADATA_TEMPLATE = f"{RAW_DATA_PATH}/metadata.yaml"
-DATA_NAME = f"{time.strftime('%y%m%d')}"
-DATA_FOLDER = make_abs_path(WC_DIR, f"{RAW_DATA_PATH}/{DATA_NAME}")
-i = 1
-while os.path.exists(os.path.normpath(DATA_FOLDER)):
-    DATA_NAME = f"{time.strftime('%y%m%d')}_{i}"
-    DATA_FOLDER = make_abs_path(WC_DIR, f"{RAW_DATA_PATH}/{DATA_NAME}")
-    i += 1
-# set data path variables in environment for trusted timestamping
-os.environ["WC_DATA_NAME"] = DATA_NAME
-os.environ["WC_DATA_FOLDER"] = DATA_FOLDER
 
 def query_devices():
     """Print system audio devices for input and output."""
@@ -50,13 +41,18 @@ def collect_data():
     )
     parser.add_argument(
         "-o", "--outdir",
-        type=str, default=DATA_FOLDER,
+        type=str, default=None,
         help="output folder"
     )
     parser.add_argument(
-        "-f", "--filename",
-        type=str, default=DATA_NAME,
-        help="output folder"
+        "-n", "--data_name",
+        type=str, default=None,
+        help="dataset name"
+    )
+    parser.add_argument(
+        "-x", "--data_suffix",
+        type=str, default=None,
+        help="dataset suffix"
     )
     parser.add_argument(
         "-i", "--input_device",
@@ -68,21 +64,49 @@ def collect_data():
         action="store_true",
         help="set flag to generate watch using librosa"
     )
+    parser.add_argument(
+        "-s", "--snr_db",
+        type=int, default=None,
+        help="desired SNR in decibels for generated audio"
+    )
     args = parser.parse_args()
 
+    # increment data_name if necessary
+    data_name = args.data_name or f"{time.strftime('%y%m%d')}"
+    if args.data_suffix is None:
+        i = 1
+        while os.path.exists(os.path.normpath(
+            make_abs_path(WC_DIR, f"{RAW_DATA_PATH}/{data_name}")
+        )):
+            data_name = f"{time.strftime('%y%m%d')}_{i}"
+            i += 1
+
     # define paths and create data directory
-    outdir = make_abs_path(WC_DIR, args.outdir)
-    outfile = f"{os.path.basename(os.path.normpath(args.outdir))}.wav"
-    os.makedirs(outdir)
+    if args.data_suffix is not None:
+        data_name = f"{data_name}{args.data_suffix}"
+
+    outdir = args.outdir
+    if outdir is None:
+        outdir = make_abs_path(WC_DIR, f"{RAW_DATA_PATH}/{data_name}")
+    outdir = os.path.normpath(outdir)
+    try:
+        os.makedirs(outdir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+        raise ValueError("Supplied data name clashes with existing dataset.")
+
+    outfile = f"{os.path.basename(outdir)}.wav"
 
     # record audio data using WatchCalibration class
     wc = WatchCalibration(fs=args.rate)
     wc.save_audio_to_file(
         args.duration,
         outdir=outdir,
-        outfile=f"{os.path.basename(os.path.normpath(args.outdir))}.wav",
+        outfile=outfile,
         input_device=args.input_device,
-        generate=args.generate
+        generate=args.generate,
+        snr_db=args.snr_db
     )
 
 
@@ -90,13 +114,13 @@ def collect_data():
     with open(METADATA_TEMPLATE, "r") as f:
         metadata = yaml.safe_load(f)
 
-    metadata["dataset"] = DATA_NAME
+    metadata["dataset"] = data_name
     metadata["sampling_rate"] = args.rate
     metadata["duration"] = args.duration
 
-    with open(f"{DATA_FOLDER}/{DATA_NAME}.yaml", "w") as f:
+    with open(f"{outdir}/{data_name}.yaml", "w") as f:
         yaml.dump(metadata, f)
 
     # Print out data directory and file names for trusted timestamping scripts
     print(outdir)
-    print(DATA_NAME)
+    print(data_name)

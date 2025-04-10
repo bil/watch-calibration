@@ -20,7 +20,6 @@ def create_table(title, html_file, out_file):
 
 
 # license table
-
 create_table(
     "Open-source License Comparison",
     f"{dir_path}/licenses.html",
@@ -29,7 +28,6 @@ create_table(
 
 
 # storage options table
-
 create_table(
     "Accessible, Persistent, Trusted Archive Comparison",
     f"{dir_path}/storage_options.html",
@@ -37,36 +35,7 @@ create_table(
 )
 
 
-# upload workflow
-
-dot = graphviz.Digraph(comment="Experiment Archive Upload Workflow")
-dot.node("1", "environment")
-dot.node("2", "code")
-dot.node("3", "data")
-dot.node("4", "figures")
-dot.node("5", "Package as reproducible artifact")
-dot.node("6", "Upload to archive")
-
-dot.edges(["15", "25", "35", "45", "56"])
-
-dot.render(f"{dir_path}/upload", format="svg", cleanup=True)
-
-
-# usage workflow
-dot = graphviz.Digraph(comment="Experiment Archive Upload Workflow")
-dot.node("1", "install container runtime and git")
-dot.node("2", "clone repo")
-dot.node("3", "Run Containerfile")
-
-dot.node("4", "Generate static plots")
-dot.node("5", "Generate interactive plots")
-dot.node("6", "Launch jupyter notebook")
-dot.node("7", "Launch iPython kernel")
-
-dot.edges(["12", "23", "34", "35", "36", "37"])
-
-dot.render(f"{dir_path}/usage", format="svg", cleanup=True)
-
+# minimal file structure
 def create_ascii_file_chart(
     filepath=".", outfile=f"{dir_path}/file_structure.svg", ignoreList=None
 ):
@@ -94,10 +63,10 @@ def create_ascii_file_chart(
     draw = ImageDraw.Draw(im)
     draw.multiline_text((10, 10), ascii_files, font=font, fill=(0,0,0))
 
-    # Save Image
+    # save image
     im.save(outfile, "png")
 
-# create_ascii_file_chart()
+
 create_ascii_file_chart(
     filepath=f"{dir_path}/arts-minimal-file-structure",
     outfile=f"{dir_path}/file_structure_minimal.svg",

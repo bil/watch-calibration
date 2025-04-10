@@ -3,14 +3,18 @@ FROM python:3.10.14
 # install dependencies
 RUN apt-get update
 # RUN apt-get install -y alsa-base libasound2-dev alsa-utils
-RUN apt-get install -y libportaudio2 libsndfile1
+RUN apt-get install -y libportaudio2 libsndfile1 graphviz jq
 
 # experiment directory
 RUN mkdir -p /usr/src/exp
 WORKDIR /usr/src/exp
 
+# install Python dependencies first to avoid extra recompilations
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
 # copy all files allowed in container Ignorefile
 COPY . .
 
-# install Python dependencies
-RUN pip install -r requirements.txt
+# install local package
+RUN pip install -e file:.#egg=watch_calibration

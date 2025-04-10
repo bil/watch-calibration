@@ -6,23 +6,21 @@ dependencies = [
 requires-python = ">=3.8"
 authors = [
   {name = "Sabar Dasgupta", email = "s@bardasgupta.com"},
-  {name = "Paul Nuyujukian", email = "paul@neural.stanford.edu"},
+  {name = "Paul Nuyujukian"},
 ]
 maintainers = [
   {name = "Sabar Dasgupta", email = "s@bardasgupta.com"}
 ]
-description = "Basic example implemeting SHREW."
+description = "An ARTS-compatible example experiment"
 readme = "README.md"
 license = "GPL-3.0"
 license-files = ["LICENSE"]
-keywords = ["reproducibility", "replicability"]
+keywords = ["reproducibility", "archives", "containers", "timestamping"]
 classifiers = [
   "Programming Language :: Python"
 ]
 
 [project.urls]
-Homepage = "https://bil.stanford.edu"
-Documentation = "https://bil.stanford.edu"
 Repository = "https://github.com/bil/watch-calibration"
 
 [project.scripts]

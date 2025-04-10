@@ -10,3 +10,4 @@ pip install wheel pip-tools
 
 pip-compile "$@"
 pip-sync requirements.txt
+pip install -e file:.#egg=watch_calibration

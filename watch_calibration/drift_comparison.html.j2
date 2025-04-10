@@ -1,0 +1,25 @@
+<
+<table border="0" cellborder="0" cellspacing="0" cellpadding="10">
+  <tr>
+    <td align="center" colspan="1"><font point-size="16">{{title}}</font></td>
+  </tr>
+  <tr><td>
+    <table border="0">
+      <tr>
+        <td width="100" bgcolor="#E0E0E0">filter</td>
+        <td width="100" bgcolor="#E0E0E0">shift</td>
+        <td width="100" bgcolor="#E0E0E0">envelope</td>
+        <td width="200" bgcolor="#E0E0E0">drift per day (s)</td>
+      </tr>
+      {% for row in rows %}
+      <tr>
+        <td>{{row[0]}}</td>
+        <td>{{row[1]}}</td>
+        <td>{{row[2]}}</td>
+        <td>{{'%0.2f'| format(row[3]|float)}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+</table>
+>

@@ -47,9 +47,6 @@ The following three commands are equivalent:
 ./run.sh generate_figures
 ```
 
-TODO verify checksum of figure from paper?
-
-
 ### Jupyter Notebook
 
 To run jupyter notebook in the container and open up a jupyter notebook on your local port 8888, run:

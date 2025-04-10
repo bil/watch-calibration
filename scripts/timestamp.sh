@@ -3,8 +3,7 @@
 # trusted timestamping variables
 TTS_PATH="$(dirname $0)/../tts"
 
-# TTS_REPO=https://github.com/bil/timestamping
-TTS_REPO="https://github.com/sabard/timestamping --branch sabard/darwin"
+TTS_REPO=https://github.com/bil/timestamping
 DATA_NAME=$1
 DATA_PATH=$2
 if [[ "$DIR" = /* ]]; then
@@ -13,6 +12,8 @@ else
   RAW_DATA_DIR="../$ARTS_RAW_DATA_PATH"
 fi
 PATH=$PATH:timestamping/trustedtimestamping/usr/local/bin
+
+mkdir -p $TTS_PATH
 
 pushd $TTS_PATH
 
@@ -60,5 +61,3 @@ printf "Unpacked\n\n"
 echo "Verifying unpacked files..."
 ttsVerify $DATA_PATH
 printf "Verification complete\n"
-
-popd $TTS_PATH

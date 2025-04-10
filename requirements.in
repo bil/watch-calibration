@@ -1,9 +1,10 @@
 # watch-calibration
--e file:.#egg=watch_calibration
 bokeh
 directory_tree
+graphviz
 ipywidgets
 ipympl
+jinja2
 jupyter
 librosa
 matplotlib

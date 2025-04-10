@@ -4,15 +4,14 @@ import csv
 import os
 import yaml
 
-from bokeh.plotting import figure, output_file, save
 import librosa
 import matplotlib
-# matplotlib.rcParams['figure.subplot.top'] = 1   # Extend plot to top of figure
-from matplotlib import pyplot as plt
 import numpy as np
 import scipy as sp
-from scipy import signal as sps
 import soundfile as sf
+
+from matplotlib import pyplot as plt
+from scipy import signal as sps
 from scipy.io.wavfile import write
 
 from .util import make_abs_path
@@ -34,8 +33,16 @@ DEFAULT_DATA_NAME = "W241130"
 DEFAULT_AUDIO = os.path.join(
     RAW_DATA_PATH, f"{DEFAULT_DATA_NAME}/{DEFAULT_DATA_NAME}.wav"
 )
+
+# filtering variables
 FREQ_BAND_MAX = 15000
+DEFAULT_FREQ_BAND = (6000, 8500)
 FILT_PROM_DIV = 70
+
+# data generation variables
+CLICK_FREQ = 7000
+CLICK_DUR = 0.01
+
 # load experiment environment variables
 WINDOW_LEN = int(os.environ.get("WC_WINDOW_LEN") or 2000)
 PEAK_PROMINENCE = float(os.environ.get("WC_PEAK_PROMINENCE") or 0.001)
@@ -46,7 +53,15 @@ class WatchCalibration:
     """ WatchCalibration class  """
 
     def __init__(self, data_name=None, fs=None):
-        """ Initialize WatchCalibration. """
+        """
+        Create WatchCalibration experiment instance for mechanical watch
+        movement calibration. Default values are populated from constants
+        defined above and associated metadata file.
+
+        Args:
+            data_name (str): dataset name for current experiment
+            fs (int): sampling rate (Hz)
+        """
 
         # constants
         if data_name is None:
@@ -61,22 +76,24 @@ class WatchCalibration:
             self.metadata = self.load_metadata(data_name)
         self.fs = fs or self.metadata.get("sampling_rate")
         self.window_len = WINDOW_LEN
-        self.peak_prominence = PEAK_PROMINENCE
-        self.f_fund = F_FUND
+        self.peak_prominence = PEAK_PROMINENCE  # prominence used for find_peaks
+        self.f_fund = F_FUND   # fundamental watch movement frequency
 
         # derivative data
-        self.audio_len = None
-        self.audio_wins = None
-        self.peaks = None
+        self.audio_len = None  # length in samples
+        self.audio_wins = None # windows around peaks
+        self.peaks = None      # peaks computed from find_peaks
 
-        # calculated from stft
+        # calculated from stft or set to default
         self.freq_band = None
 
 
-    ## Class Functions ########################################################
+    ## Class Methods ###########################################################
 
     @classmethod
     def query_devices(cls):
+        """Print audio devices available to sounddevice library."""
+
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
             return
@@ -86,6 +103,15 @@ class WatchCalibration:
 
     @classmethod
     def load_metadata(cls, data_name):
+        """Load metadata YAML file from RAW_DATA_PATH.
+
+        Args:
+            data_name (str): dataset name (used for metadata filename too)
+
+        Returns:
+            metadata (dict): dict representation of metadata YAML file
+        """
+
         metadata_file = os.path.join(
             RAW_DATA_PATH, f"{data_name}/{data_name}.yaml"
         )
@@ -95,9 +121,32 @@ class WatchCalibration:
         return metadata
 
 
+    ## Instance Methods ########################################################
+
+    def generate_audio(self, duration, snr_db=None):
+
+        x = librosa.clicks(
+            times=np.arange(duration, step=1./self.f_fund),
+            sr=self.fs, length=self.fs*duration,
+            click_freq=CLICK_FREQ, click_duration=CLICK_DUR
+        )
+
+        if snr_db is not None:
+            x_pwr = x ** 2
+            x_avg_pwr = np.mean(x_pwr)
+            x_avg_db = 10 * np.log10(x_avg_pwr)
+            n_avg_db = x_avg_db - snr_db
+            n_avg_pwr = 10 ** (n_avg_db / 10)
+            n_mean = 0
+            n = np.random.normal(n_mean, np.sqrt(n_avg_pwr), len(x))
+            x = x + n
+
+        return x
+
     def save_audio_to_file(
         self, duration,
-        outdir=".", outfile="output.wav", input_device=None, generate=False
+        outdir=".", outfile="output.wav", input_device=None,
+        generate=False, snr_db=None
     ):
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
@@ -105,10 +154,7 @@ class WatchCalibration:
 
         if generate:
             # generate with librosa
-            recording = librosa.clicks(
-                times=np.arange(duration, step=1./self.f_fund),
-                sr=self.fs, length=self.fs*duration, click_duration=0.01
-            )
+            recording = self.generate_audio(duration, snr_db=snr_db)
         else:
             # record from audio interface
             recording = sd.rec(
@@ -121,13 +167,11 @@ class WatchCalibration:
         write(os.path.join(outdir, outfile), self.fs, recording)
 
 
-    def play_audio(self, filename, output_device=sd.default.device):
+    def play_audio(self, data, fs, output_device=sd.default.device):
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
             return
 
-        # Extract data and sampling rate from file
-        data, fs = sf.read(filename, dtype='float32')
         sd.play(data, fs, device=output_device)
         status = sd.wait()  # Wait until file is done playing
 
@@ -155,7 +199,9 @@ class WatchCalibration:
         fig.canvas.header_visible = False
         A, peaks = self.calculate_freq_band(audio)
         plt.plot(A, zorder=1)
-        plt.fill_between(peaks, np.min(A), np.max(A), alpha=0.7,zorder=10)
+        plt.fill_between(
+            self.freq_band, np.min(A), np.max(A), alpha=0.7,zorder=10
+        )
         plt.xlabel("frequency (Hz)")
         plt.ylabel("power")
         plt.title(f"FFT and frequency band of interest (Hz)")
@@ -181,7 +227,12 @@ class WatchCalibration:
         # create audio windows
         audio_wins = []
         for p in peaks:
-            audio_wins.append(audio[p-self.window_len//2:p+self.window_len//2])
+            start = p - self.window_len // 2
+            end = p + self.window_len // 2
+            if start > 0 and end < len(audio):
+                audio_wins.append(
+                    audio[p-self.window_len//2:p+self.window_len//2]
+                )
 
         self.audio_len = len(audio)
         self.audio_wins = audio_wins
@@ -209,31 +260,34 @@ class WatchCalibration:
     ):
         # TODO do this with derivative data?
         #self.load_deriv_data()
-        # onset_times = self.peaks / self.fs
-        # diffs = np.diff(onset_times)
+        # peak_times = self.peaks / self.fs
+        # diffs = np.diff(peak_times)
 
         if raw_audio is None:
             raw_audio, _ = self.load_audio()
 
         audio = self.trim_audio(raw_audio)
 
-        audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
+        audio, peaks, peak_times = self.find_peaks(audio, filter=filter)
 
         if shift or envelope:
             peaks = self.shift_peaks(
                 audio, peaks, envelope=envelope
             )
 
-        onset_times = peaks / self.fs
-        diffs = np.diff(onset_times)
 
-        plt.figure()
-        plt.hist(diffs, bins="auto")
+        # remove first and last peaks
+        peaks = peaks[1:-1]
+        peak_times = peaks / self.fs
+        diffs = np.diff(peak_times)
+
+        fig = plt.figure()
+        fig.canvas.header_visible = False
+        plt.hist(diffs, bins=20)
         plt.title(f"Tick time diffs (Mean: {np.mean(diffs):.5f}; StdDev: {np.std(diffs):.5f})")
         plt.xlabel("time (s)")
         plt.ylabel("occurrences")
         plt.show()
-
 
         if not plot_wins:
             return
@@ -244,13 +298,11 @@ class WatchCalibration:
             fig, axs = plt.subplots(num_fig_rows, num_fig_cols, squeeze=False)
             fig.set_figheight(15)
             fig.set_figwidth(15)
-            for i, peak in enumerate(peaks):
+            for i, peak in enumerate(peaks[1:-1]):
                 win_start = peak - self.window_len//2
                 win_end = peak + self.window_len//2
-                # if shift or envelope:
-                #     win_start = peaks[i] - self.window_len//2
-                #     win_end = peaks[i] + self.window_len//2
                 win = audio[win_start:win_end]
+                if len(win) == 0: continue
 
                 ax = axs[i%num_fig_rows][i//num_fig_rows]
                 ax.axes.get_xaxis().set_visible(False)
@@ -259,9 +311,9 @@ class WatchCalibration:
                 ax.plot(win)
                 ax.plot(peak-win_start, audio[peak], "x", color="orange")
                 ax.vlines(
-                    peaks[i]-win_start,
+                    peaks[i+1]-win_start,
                     np.min(win), np.max(win),
-                    color='r', alpha=0.8
+                    color="r", alpha=0.8
                 )
 
         return fig
@@ -280,32 +332,30 @@ class WatchCalibration:
         audio = self.trim_audio(raw_audio)
 
 
-        audio, peaks, onset_times = self.find_peaks(audio, filter=filter)
+        audio, peaks, peak_times = self.find_peaks(audio, filter=filter)
 
         if shift or envelope:
             peaks = self.shift_peaks(
                 audio, peaks, envelope=envelope
             )
 
-        onset_times = peaks / self.fs
-
-        # remove first and last onset times
-        onset_times = onset_times[1:-1]
-        diffs = np.diff(onset_times)
+        # remove first and last peaks
+        peaks = peaks[1:-1]
+        peak_times = peaks / self.fs
+        diffs = np.diff(peak_times)
 
         audio_dur = len(audio) / self.fs
 
-        actual_last_click_time = onset_times[-1]
+        actual_last_click_time = peak_times[-1]
         ideal_last_click_time = (
-            onset_times[0] + (len(onset_times) - 1) * 1./self.f_fund
+            peak_times[0] + (len(peak_times) - 1) * 1./self.f_fund
         )
-
         drift_per_s = np.mean(diffs) * self.f_fund - 1.
 
         if not output:
             return drift_per_s
 
-        print(f"first tick time: {onset_times[0]:.4f} s")
+        print(f"first tick time: {peak_times[0]:.4f} s")
         print(f"actual last tick time: {actual_last_click_time:.4f}")
         print(f"ideal last tick time: {ideal_last_click_time:.4f}")
 
@@ -328,27 +378,6 @@ class WatchCalibration:
         return drift_per_s
 
 
-    def generate_figures(self, audio=None, output_path=OUTPUT_PATH):
-        if audio is None:
-            audio, _ = self.load_audio()
-
-        # create figures
-        fig = plt.figure(figsize=(8,2))
-        fig.canvas.header_visible = False
-        plt.plot(audio)
-        plt.axis('off')
-        plt.gca().set_position([0, 0, 1, 1])
-        # plt.savefig(f"{output_path}/fig1.svg")
-        plt.savefig("../fig1.svg")
-
-        # create HTML bokeh page
-        p = figure(title="Basic Title")#, plot_width=300, plot_height=300)
-        p.circle([1, 2], [3, 4])
-        # output_file(f"{output_path}/fig1.html")
-        output_file("../fig1.html")
-        save(p)
-
-
     ## Class Utilities ########################################################
 
     def _normalize(self, x):
@@ -360,13 +389,15 @@ class WatchCalibration:
         return shift_amt
 
     def calculate_freq_band(self, audio):
-        A = np.abs(sp.fft.fft(audio))[:self.fs//2]
+        A = np.abs(sp.fft.fft(audio))[:FREQ_BAND_MAX]
         peaks = sps.find_peaks(
             A, height=np.mean(A)*8, distance=self.fs//400
         )[0]
-        self.freq_band = (peaks[0], peaks[-1])
-        if self.freq_band[1] > FREQ_BAND_MAX:
-            self.freq_band = (peaks[0], FREQ_BAND_MAX)
+        if len(peaks) < 3: # high SNR
+            self.freq_band = DEFAULT_FREQ_BAND # use default freq_band
+        else:
+            self.freq_band = (peaks[0], peaks[-1])
+
         return A, peaks
 
     def trim_audio(self, audio, start=None, end=None):
@@ -410,19 +441,18 @@ class WatchCalibration:
             prominence=prominence,
             wlen=distance
         )[0]
-        # plt.plot(peaks, audio[peaks], "x")
 
         # throw out first and last peaks
-        onset_times = peaks / self.fs
+        peak_times = peaks / self.fs
 
-        return audio, peaks, onset_times
+        return audio, peaks, peak_times
 
     def shift_peaks(self, audio, peaks, envelope=False):
         if envelope:
             _, env = self.calculate_envelope(audio)
 
         shifted_peaks = copy.copy(peaks)
-        for i in range(len(peaks)-1):
+        for i in range(1, len(peaks)-1):
             win1_start = peaks[i]-self.window_len//2
             if win1_start < 0:
                 win1_start = 0
@@ -448,31 +478,6 @@ class WatchCalibration:
                 shifted_peaks[i+1] -= shift_amt
 
         return shifted_peaks
-
-
-    def pad_wins(self, w1, w2, shift_amt):
-        if shift_amt > 0:
-            w1 = np.pad(w1, (0,shift_amt//2))
-            w2 = np.pad(w2, (shift_amt//2,0))
-        else:
-            w2 = np.pad(w2, (0,-shift_amt//2))
-            w1 = np.pad(w1, (-shift_amt//2,0))
-
-        return w1, w2
-
-    def plot_wins(self, w1, w2, shift_amt=0, title=None):
-        fig = plt.figure(figsize=(8,2))
-        fig.canvas.header_visible = False
-
-        w1, w2 = self.pad_wins(w1, w2, shift_amt)
-        plt.plot(w1)
-        plt.plot(w2)
-
-        if title:
-            plt.title(title)
-
-        plt.show()
-
 
 
     def print_drift_over_time(

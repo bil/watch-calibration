@@ -1,3 +1,6 @@
 # mybinder.org apt packages
 
+graphviz
+jq
 libportaudio2
+libsndfile1

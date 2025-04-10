@@ -4,8 +4,6 @@
 #
 #    pip-compile
 #
--e file:.#egg=watch_calibration
-    # via -r requirements.in
 anyio==4.8.0
     # via
     #   httpx
@@ -126,6 +124,7 @@ jedi==0.19.2
     # via ipython
 jinja2==3.1.5
     # via
+    #   -r requirements.in
     #   bokeh
     #   jupyter-server
     #   jupyterlab
