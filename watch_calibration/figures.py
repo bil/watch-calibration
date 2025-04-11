@@ -155,7 +155,7 @@ def generate_figures(wcs, drift_rows):
             w.create_deriv_from_raw()
 
         # peak comparison figure
-        fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+        fig, axs = plt.subplots(2, 2, figsize=(10, 6), sharey=True)
         axs = axs.flatten()
 
         # figure settings
@@ -197,6 +197,7 @@ def generate_figures(wcs, drift_rows):
                 np.min(win), np.max(win),
                 linestyles="dashed", label=click_label
             )
+            ax.spines[['right', 'top']].set_visible(False)
 
             # bokeh
             p = figure(title=name, width=600, height=400)
@@ -232,6 +233,10 @@ def generate_figures(wcs, drift_rows):
         fig.tight_layout()
         plt.subplots_adjust(bottom=0.15)
         fig.suptitle("Watch tick drift compared to ideal tick", y=1)
+        axs[2].xaxis.set_label_text("time (s)")
+        axs[3].xaxis.set_label_text("time (s)")
+        axs[0].yaxis.set_label_text("audio signal (normalized)")
+        axs[2].yaxis.set_label_text("audio signal (normalized)")
         plt.savefig(
             os.path.join(OUTPUT_PATH, "drift_figure.png"),
             dpi=300, bbox_inches="tight"

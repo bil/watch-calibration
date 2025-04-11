@@ -269,7 +269,7 @@ class WatchCalibration:
         envelope=False, plot_wins=False
     ):
 
-        audio, peaks, peak_times, diffs = _get_anaylsis_vars(
+        audio, peaks, peak_times, diffs = self._get_anaylsis_vars(
             raw_audio=raw_audio, filter=filter, shift=shift, envelope=envelope
         )
 
