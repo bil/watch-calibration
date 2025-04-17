@@ -46,6 +46,8 @@ cffi==1.17.1
     #   soundfile
 cfgv==3.4.0
     # via pre-commit
+chardet==5.2.0
+    # via jupyter-repo2docker
 charset-normalizer==3.4.1
     # via requests
 comm==0.2.2
@@ -70,6 +72,12 @@ directory-tree==1.0.0
     # via -r requirements.in
 distlib==0.3.9
     # via virtualenv
+docker==7.1.0
+    # via jupyter-repo2docker
+entrypoints==0.4
+    # via jupyter-repo2docker
+escapism==1.0.1
+    # via jupyter-repo2docker
 exceptiongroup==1.2.2
     # via
     #   anyio
@@ -80,6 +88,8 @@ fastjsonschema==2.21.1
     # via nbformat
 filelock==3.17.0
     # via virtualenv
+flake8==7.2.0
+    # via -r requirements.in
 fonttools==4.56.0
     # via matplotlib
 fqdn==1.5.1
@@ -118,6 +128,8 @@ ipywidgets==8.1.5
     #   -r requirements.in
     #   ipympl
     #   jupyter
+iso8601==2.1.0
+    # via jupyter-repo2docker
 isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
@@ -126,6 +138,7 @@ jinja2==3.1.5
     # via
     #   -r requirements.in
     #   bokeh
+    #   jupyter-repo2docker
     #   jupyter-server
     #   jupyterlab
     #   jupyterlab-server
@@ -169,6 +182,8 @@ jupyter-events==0.12.0
     # via jupyter-server
 jupyter-lsp==2.2.5
     # via jupyterlab
+jupyter-repo2docker==2024.7.0
+    # via -r requirements.in
 jupyter-server==2.15.0
     # via
     #   jupyter-lsp
@@ -210,6 +225,8 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
+mccabe==0.7.0
+    # via flake8
 mistune==3.1.1
     # via nbconvert
 msgpack==1.1.0
@@ -302,8 +319,12 @@ ptyprocess==0.7.0
     #   terminado
 pure-eval==0.2.3
     # via stack-data
+pycodestyle==2.13.0
+    # via flake8
 pycparser==2.22
     # via cffi
+pyflakes==3.3.2
+    # via flake8
 pygments==2.19.1
     # via
     #   ipython
@@ -318,7 +339,9 @@ python-dateutil==2.9.0.post0
     #   matplotlib
     #   pandas
 python-json-logger==3.2.1
-    # via jupyter-events
+    # via
+    #   jupyter-events
+    #   jupyter-repo2docker
 pytz==2025.1
     # via pandas
 pyyaml==6.0.2
@@ -339,6 +362,8 @@ referencing==0.36.2
     #   jupyter-events
 requests==2.32.3
     # via
+    #   docker
+    #   jupyter-repo2docker
     #   jupyterlab-server
     #   pooch
 rfc3339-validator==0.1.4
@@ -353,6 +378,10 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
+ruamel-yaml==0.18.10
+    # via jupyter-repo2docker
+ruamel-yaml-clib==0.2.12
+    # via ruamel-yaml
 scikit-learn==1.6.1
     # via
     #   -r requirements.in
@@ -362,6 +391,8 @@ scipy==1.15.2
     #   -r requirements.in
     #   librosa
     #   scikit-learn
+semver==3.0.4
+    # via jupyter-repo2docker
 send2trash==1.8.3
     # via jupyter-server
 six==1.17.0
@@ -388,6 +419,8 @@ threadpoolctl==3.5.0
     # via scikit-learn
 tinycss2==1.4.0
     # via bleach
+toml==0.10.2
+    # via jupyter-repo2docker
 tomli==2.2.1
     # via jupyterlab
 tornado==6.4.2
@@ -410,6 +443,7 @@ traitlets==5.14.3
     #   jupyter-console
     #   jupyter-core
     #   jupyter-events
+    #   jupyter-repo2docker
     #   jupyter-server
     #   jupyterlab
     #   matplotlib-inline
@@ -432,7 +466,9 @@ tzdata==2025.1
 uri-template==1.3.0
     # via jsonschema
 urllib3==2.3.0
-    # via requests
+    # via
+    #   docker
+    #   requests
 virtualenv==20.29.2
     # via pre-commit
 wcwidth==0.2.13

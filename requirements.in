@@ -15,5 +15,7 @@ scikit-learn
 scipy
 
 # development
+flake8
 graphviz
+jupyter-repo2docker
 pre-commit

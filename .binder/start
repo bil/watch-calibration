@@ -1,4 +1,8 @@
 #!/bin/bash
 set -e
-source config.env
+
+set -a
+source ./config.env
+set +a
+
 exec "$@"
