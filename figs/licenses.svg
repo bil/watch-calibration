@@ -27,7 +27,7 @@
 <text text-anchor="start" x="22" y="-182.32" font-family="Times,serif" font-size="14.00">MIT/BSD/Apache</text>
 <text text-anchor="start" x="171.25" y="-182.7" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="274.38" y="-182.7" font-family="Times,serif" font-size="14.00">☓</text>
-<text text-anchor="start" x="400.88" y="-182.32" font-family="Times,serif" font-size="14.00">permissive</text>
+<text text-anchor="start" x="369" y="-182.32" font-family="Times,serif" font-size="14.00">permissive; attribution</text>
 <text text-anchor="start" x="52.75" y="-159.07" font-family="Times,serif" font-size="14.00">GPLv3</text>
 <text text-anchor="start" x="171.25" y="-159.45" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="273.25" y="-159.45" font-family="Times,serif" font-size="14.00">✓</text>
@@ -51,9 +51,11 @@
 <text text-anchor="start" x="50.31" y="-44.83" font-family="Times,serif" font-size="14.00">CC BY</text>
 <text text-anchor="start" x="168.44" y="-45.2" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="272.69" y="-45.2" font-family="Times,serif" font-size="14.00">☓</text>
+<text text-anchor="start" x="401.81" y="-44.83" font-family="Times,serif" font-size="14.00">attribution</text>
 <text text-anchor="start" x="40.19" y="-21.57" font-family="Times,serif" font-size="14.00">CC BY&#45;SA</text>
 <text text-anchor="start" x="168.44" y="-21.95" font-family="Times,serif" font-size="14.00">✓</text>
 <text text-anchor="start" x="271.56" y="-21.95" font-family="Times,serif" font-size="14.00">✓</text>
+<text text-anchor="start" x="400.31" y="-21.57" font-family="Times,serif" font-size="14.00">share&#45;alike</text>
 </g>
 </g>
 </svg>

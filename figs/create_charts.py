@@ -37,7 +37,7 @@ create_table(
 
 # minimal file structure
 def create_ascii_file_chart(
-    filepath=".", outfile=f"{dir_path}/file_structure.svg", ignoreList=None
+    filepath=".", outfile=f"{dir_path}/file_structure", ignoreList=None
 ):
 
     if ignoreList is None:
@@ -64,11 +64,11 @@ def create_ascii_file_chart(
     draw.multiline_text((10, 10), ascii_files, font=font, fill=(0,0,0))
 
     # save image
-    im.save(outfile, "png")
+    im.save(f"{outfile}.png", "png")
 
 
 create_ascii_file_chart(
     filepath=f"{dir_path}/arts-minimal-file-structure",
-    outfile=f"{dir_path}/file_structure_minimal.svg",
+    outfile=f"{dir_path}/file_structure_minimal",
     ignoreList=[]
 )

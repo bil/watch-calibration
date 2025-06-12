@@ -1,7 +1,6 @@
 # watch-calibration
 bokeh
 directory_tree
-graphviz
 ipywidgets
 ipympl
 jinja2
