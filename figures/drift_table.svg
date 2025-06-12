@@ -9,7 +9,11 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(0 680)">
 <title>%3</title>
 <polygon fill="white" stroke="transparent" points="0,0 0,-644 1126,-644 1126,0 0,0"/>
+<<<<<<< Updated upstream
 <text text-anchor="middle" x="563" y="-627.2" font-family="Helvetica,sans-Serif" font-size="16.00">Combined Drift Comparison</text>
+=======
+<text text-anchor="middle" x="563" y="-627.2" font-family="Helvetica,sans-Serif" font-size="16.00">Combined drift comparison</text>
+>>>>>>> Stashed changes
 <g id="clust1" class="cluster">
 <title>cluster_layout</title>
 </g>
