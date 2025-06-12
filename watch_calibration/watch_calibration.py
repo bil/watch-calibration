@@ -1,14 +1,11 @@
 """ WatchCalibration Class """
 import copy
-import csv
 import os
 import yaml
 
 import librosa
-import matplotlib
 import numpy as np
 import scipy as sp
-import soundfile as sf
 
 from matplotlib import pyplot as plt
 from scipy import signal as sps
@@ -67,7 +64,7 @@ class WatchCalibration:
         if data_name is None:
             self.data_name = DEFAULT_DATA_NAME
             self.audio_file = DEFAULT_AUDIO
-            self.metadata =  self.load_metadata(DEFAULT_DATA_NAME)
+            self.metadata = self.load_metadata(DEFAULT_DATA_NAME)
         else:
             self.data_name = data_name
             self.audio_file = os.path.join(
@@ -77,18 +74,17 @@ class WatchCalibration:
         self.fs = fs or self.metadata.get("sampling_rate")
         self.window_len = WINDOW_LEN
         self.peak_prominence = PEAK_PROMINENCE  # prominence used for find_peaks
-        self.f_fund = F_FUND   # fundamental watch movement frequency
+        self.f_fund = F_FUND    # fundamental watch movement frequency
 
         # derivative data
-        self.audio_len = None  # length in samples
-        self.audio_wins = None # windows around peaks
-        self.peaks = None      # peaks computed from find_peaks
+        self.audio_len = None   # length in samples
+        self.audio_wins = None  # windows around peaks
+        self.peaks = None       # peaks computed from find_peaks
 
         # calculated from stft or set to default
         self.freq_band = None
 
-
-    ## Class Methods ###########################################################
+    # Class Methods ###########################################################
 
     @classmethod
     def query_devices(cls):
@@ -99,7 +95,6 @@ class WatchCalibration:
             return
 
         print(sd.query_devices())
-
 
     @classmethod
     def load_metadata(cls, data_name):
@@ -120,14 +115,13 @@ class WatchCalibration:
 
         return metadata
 
-
-    ## Instance Methods ########################################################
+    # Instance Methods ########################################################
 
     def generate_audio(self, duration, snr_db=None):
 
         x = librosa.clicks(
-            times=np.arange(duration, step=1./self.f_fund),
-            sr=self.fs, length=self.fs*duration,
+            times=np.arange(duration, step=1. / self.f_fund),
+            sr=self.fs, length=self.fs * duration,
             click_freq=CLICK_FREQ, click_duration=CLICK_DUR
         )
 
@@ -166,27 +160,24 @@ class WatchCalibration:
         # write audio to file
         write(os.path.join(outdir, outfile), self.fs, recording)
 
-
     def play_audio(self, data, fs, output_device=sd.default.device):
         if not SND_DEFINED:
             print("sounddevice library could not be loaded.")
             return
 
         sd.play(data, fs, device=output_device)
-        status = sd.wait()  # Wait until file is done playing
-
+        sd.wait()  # Wait until file is done playing
 
     def load_audio(self, filename=None):
         if filename is None:
             filename = self.audio_file
         return librosa.load(filename, sr=self.fs)
 
-
     def plot_audio(self, audio, plt_secs=None):
         if plt_secs:
             audio_win = audio[-self.fs*plt_secs:]
 
-        fig = plt.figure(figsize=(8,2))
+        fig = plt.figure(figsize=(8, 2))
         fig.canvas.header_visible = False
         plt.plot(audio_win)
         plt.ylim(np.min(audio_win), np.max(audio_win))
@@ -194,27 +185,26 @@ class WatchCalibration:
         plt.title("Audio signal")
         plt.show()
 
-        fig = plt.figure(figsize=(8,2))
+        fig = plt.figure(figsize=(8, 2))
         fig.canvas.header_visible = False
         A, peaks = self.calculate_freq_band(audio)
         plt.plot(A, zorder=1)
         plt.fill_between(
-            self.freq_band, np.min(A), np.max(A), alpha=0.7,zorder=10
+            self.freq_band, np.min(A), np.max(A), alpha=0.7, zorder=10
         )
         plt.xlabel("frequency (Hz)")
         plt.ylabel("power")
-        plt.title(f"FFT and frequency band of interest (Hz)")
+        plt.title("FFT and frequency band of interest (Hz)")
         plt.show()
 
         # spectral
-        fig = plt.figure(figsize=(8,2))
+        fig = plt.figure(figsize=(8, 2))
         fig.canvas.header_visible = False
         D = librosa.amplitude_to_db(np.abs(librosa.stft(audio_win)), ref=np.max)
         librosa.display.specshow(D)
         plt.xlabel("time")
         plt.ylabel("frequency")
         plt.title("Spectrogram")
-
 
     def create_deriv_from_raw(self, raw_audio=None, filter=False):
         if raw_audio is None:
@@ -230,14 +220,13 @@ class WatchCalibration:
             end = p + self.window_len // 2
             if start > 0 and end < len(audio):
                 audio_wins.append(
-                    audio[p-self.window_len//2:p+self.window_len//2]
+                    audio[p - self.window_len // 2:p + self.window_len // 2]
                 )
 
         self.audio_len = len(audio)
         self.audio_wins = audio_wins
         self.peaks = peaks
         return audio
-
 
     def save_deriv_data(
         self, deriv_data_path=DERIV_DATA_PATH,
@@ -263,14 +252,13 @@ class WatchCalibration:
             self.peaks
         )
 
-
     def view_correlations(
         self, raw_audio=None, filter=False, shift=False,
         envelope=False, plot_wins=False
     ):
 
-        audio, peaks, peak_times, diffs = self._get_anaylsis_vars(
-            raw_audio=raw_audio, filter=filter, shift=shift, envelope=envelope
+        audio, peaks, peak_times, diffs = self._get_analysis_vars(
+            audio=raw_audio, filter=filter, shift=shift, envelope=envelope
         )
 
         fig = plt.figure()
@@ -285,25 +273,26 @@ class WatchCalibration:
             return
 
         num_fig_cols = 10
-        num_fig_rows = len(peaks)//num_fig_cols+1
+        num_fig_rows = len(peaks) // num_fig_cols + 1
         with plt.ioff():
             fig, axs = plt.subplots(num_fig_rows, num_fig_cols, squeeze=False)
             fig.set_figheight(15)
             fig.set_figwidth(15)
             for i, peak in enumerate(peaks[1:-1]):
-                win_start = peak - self.window_len//2
-                win_end = peak + self.window_len//2
+                win_start = peak - self.window_len // 2
+                win_end = peak + self.window_len // 2
                 win = audio[win_start:win_end]
-                if len(win) == 0: continue
+                if len(win) == 0:
+                    continue
 
-                ax = axs[i%num_fig_rows][i//num_fig_rows]
+                ax = axs[i % num_fig_rows][i // num_fig_rows]
                 ax.axes.get_xaxis().set_visible(False)
                 ax.axes.get_yaxis().set_visible(False)
 
                 ax.plot(win)
-                ax.plot(peak-win_start, audio[peak], "x", color="orange")
+                ax.plot(peak - win_start, audio[peak], "x", color="orange")
                 ax.vlines(
-                    peaks[i+1]-win_start,
+                    peaks[i+1] - win_start,
                     np.min(win), np.max(win),
                     color="r", alpha=0.8
                 )
@@ -315,15 +304,13 @@ class WatchCalibration:
         envelope=False, filter=False, shift=False, output=True
     ):
 
-        audio, peaks, peak_times, diffs = self._get_anaylsis_vars(
-            raw_audio=None, filter=filter, shift=shift, envelope=envelope
+        audio, peaks, peak_times, diffs = self._get_analysis_vars(
+            audio=None, filter=filter, shift=shift, envelope=envelope
         )
-
-        audio_dur = len(audio) / self.fs
 
         actual_last_click_time = peak_times[-1]
         ideal_last_click_time = (
-            peak_times[0] + (len(peak_times) - 1) * 1./self.f_fund
+            peak_times[0] + (len(peak_times) - 1) * 1. / self.f_fund
         )
         drift_per_s = np.mean(diffs) * self.f_fund - 1.
 
@@ -340,7 +327,7 @@ class WatchCalibration:
         SEC_IN_DAY = SEC_IN_HOUR * 24
         SEC_IN_WEEK = SEC_IN_DAY * 7
         SEC_IN_MONTH = SEC_IN_DAY * 30
-        SEC_IN_YEAR =  SEC_IN_DAY * 365
+        SEC_IN_YEAR = SEC_IN_DAY * 365
         self.print_drift_over_time(
             drift_per_s, SEC_IN_MIN, "minute", format_string="%0.5f"
         )
@@ -352,20 +339,19 @@ class WatchCalibration:
 
         return drift_per_s
 
+    # Class Utilities #########################################################
 
-    ## Class Utilities ########################################################
-
-    def _get_anaylsis_vars(
-        self, raw_audio=None, filter=False, shift=False, envelope=False
+    def _get_analysis_vars(
+        self, audio=None, filter=False, shift=False, envelope=False
     ):
         # TODO use only derivative data
-        # self.create_deriv_from_raw(raw_audio, filter=filter)
+        # self.create_deriv_from_raw(audio, filter=filter)
         # self.load_deriv_data()
 
-        if raw_audio is None:
-            raw_audio, _ = self.load_audio()
+        if audio is None:
+            audio, _ = self.load_audio()
 
-        audio = self.trim_audio(raw_audio)
+        audio = self.trim_audio(audio)
 
         audio, peaks, peak_times = self.find_peaks(audio, filter=filter)
 
@@ -392,10 +378,10 @@ class WatchCalibration:
     def calculate_freq_band(self, audio):
         A = np.abs(sp.fft.fft(audio))[:FREQ_BAND_MAX]
         peaks = sps.find_peaks(
-            A, height=np.mean(A)*8, distance=self.fs//400
+            A, height=np.mean(A) * 8, distance=self.fs // 400
         )[0]
-        if len(peaks) < 3: # high SNR
-            self.freq_band = DEFAULT_FREQ_BAND # use default freq_band
+        if len(peaks) < 3:  # high SNR
+            self.freq_band = DEFAULT_FREQ_BAND  # use default freq_band
         else:
             self.freq_band = (peaks[0], peaks[-1])
 
@@ -403,7 +389,7 @@ class WatchCalibration:
 
     def trim_audio(self, audio, start=None, end=None):
         # throw out first and last ticks
-        win_size = int(self.fs/self.f_fund)
+        win_size = int(self.fs / self.f_fund)
         if not start:
             start = win_size
         if not end:
@@ -416,7 +402,7 @@ class WatchCalibration:
                 _, peaks = self.calculate_freq_band(audio)
             freq_band = self.freq_band
 
-        b, a = sps.butter(order, freq_band, btype="bandpass", fs = self.fs)
+        b, a = sps.butter(order, freq_band, btype="bandpass", fs=self.fs)
 
         return sps.filtfilt(b, a, audio)
 
@@ -427,7 +413,7 @@ class WatchCalibration:
         return filtered, z_env
 
     def find_peaks(self, audio, filter=False):
-        distance = int(self.fs/self.f_fund*.9)
+        distance = int(self.fs / self.f_fund * .9)
 
         if filter:
             audio = self.filter_audio(audio)
@@ -453,19 +439,19 @@ class WatchCalibration:
             _, env = self.calculate_envelope(audio)
 
         shifted_peaks = copy.copy(peaks)
-        for i in range(1, len(peaks)-1):
-            win1_start = peaks[i]-self.window_len//2
+        for i in range(1, len(peaks) - 1):
+            win1_start = peaks[i] - self.window_len // 2
             if win1_start < 0:
                 win1_start = 0
-            win1_end = peaks[i]+self.window_len//2 + 1
+            win1_end = peaks[i] + self.window_len // 2 + 1
             if win1_end > len(audio):
                 win1_end = len(audio)
             win1 = self._normalize(audio[win1_start:win1_end])
 
-            win2_start = peaks[i+1]-self.window_len//2
+            win2_start = peaks[i + 1] - self.window_len // 2
             if win2_start < 0:
                 win2_start = 0
-            win2_end = peaks[i+1]+self.window_len//2
+            win2_end = peaks[i + 1] + self.window_len // 2
             if win2_end > len(audio):
                 win2_end = len(audio)
             win2 = self._normalize(audio[win2_start:win2_end])
@@ -475,23 +461,20 @@ class WatchCalibration:
                 win2 = self._normalize(env[win2_start:win2_end])
 
             shift_amt = self._corr_wins(win1, win2)
-            if i+1 < len(shifted_peaks):
-                shifted_peaks[i+1] -= shift_amt
+            if i + 1 < len(shifted_peaks):
+                shifted_peaks[i + 1] -= shift_amt
 
         return shifted_peaks
 
-
     def print_drift_over_time(
-            self, drift_per_sec, seconds, dur_string, format_string = "%0.2f"
-        ):
-            drift = drift_per_sec * seconds
-            units = "s"
-            if abs(drift) > 60:
-                drift /= 60.
-                units = "m"
-            x = ".2f"
-            print(f"{format_string} {units} drift in a {dur_string}" % drift)
-
+            self, drift_per_sec, seconds, dur_string, format_string="%0.2f"
+    ):
+        drift = drift_per_sec * seconds
+        units = "s"
+        if abs(drift) > 60:
+            drift /= 60.
+            units = "m"
+        print(f"{format_string} {units} drift in a {dur_string}" % drift)
 
     def load_deriv_data(self, deriv_data_path=DERIV_DATA_PATH):
         if self.audio_len is None:

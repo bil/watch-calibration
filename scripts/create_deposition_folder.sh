@@ -25,7 +25,10 @@ cp -r $DERIV_DATA_FOLDER $OUTPUT_FOLDER
 
 git clone --bare --no-local $REPO "$OUTPUT_FOLDER/$BARE_REPO_NAME"
 pushd "$OUTPUT_FOLDER/$BARE_REPO_NAME"
+
+# necessary in the case of cloning from a local repo
 git gc --aggressive --prune=now
 git repack -adf
+
 git update-server-info
 popd

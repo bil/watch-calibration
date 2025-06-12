@@ -125,7 +125,7 @@ def generate_figures(wcs, drift_rows):
         dot.node_attr["fontname"] = "helvetica"
         dot.edge_attr["fontname"] = "helvetica"
         dot.attr(
-            label="Combined Drift Comparison",
+            label="Combined drift comparison",
             labelloc="t", fontsize="16", margin="0,.5"
         )
         dot.attr(pad="0,0")

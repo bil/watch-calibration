@@ -10,3 +10,4 @@
 !scripts/
 !config.env
 !notebooks
+!raw_data/
